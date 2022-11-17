@@ -47,7 +47,7 @@ template <class Item> void queue<Item>::push(const Item &entry) {
         rear_ptr = front_ptr;
     } else { // The list is not empty. So call list_insert().
         list_insert(rear_ptr, entry);
-        rear_ptr = rear_ptr->link();
+        rear_ptr = rear_ptr->get_link();
     }
     count++;
 }
