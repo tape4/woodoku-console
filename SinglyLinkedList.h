@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdlib>
 
+
 /* The node class template declaration */
 
 template <class Item> class node {
