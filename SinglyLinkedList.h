@@ -27,9 +27,12 @@ node<Item>::node(const Item &init_data, node<Item> *init_link) {
     link_field = init_link;
 }
 
+
+
 /* The singly linked list function temaplte toolkit prototype  */
 
-template <class Item> size_t list_length(const node<Item> *head_ptr);
+template <class Item> 
+size_t list_length(const node<Item> *head_ptr);
 
 template <class Item>
 node<Item> *list_search(node<Item> *head_ptr, const Item &target);
@@ -47,19 +50,24 @@ void list_head_insert(node<Item> *&head_ptr, const Item &new_data);
 template <class Item>
 void list_insert(node<Item> *previous_ptr, const Item &new_data);
 
-template <class Item> void list_head_remove(node<Item> *&head_ptr);
+template <class Item> 
+void list_head_remove(node<Item> *&head_ptr);
 
-template <class Item> void list_remove(node<Item> *previous_ptr);
+template <class Item> 
+void list_remove(node<Item> *previous_ptr);
 
-template <class Item> void list_clear(node<Item> *&head_ptr);
+template <class Item> 
+void list_clear(node<Item> *&head_ptr);
 
 template <class Item>
 void list_copy(const node<Item> *source_ptr, node<Item> *&head_ptr,
                node<Item> *&tail_ptr);
 
+
 /* The singly linked list function template toolkit definition */
 
-template <class Item> size_t list_length(const node<Item> *head_ptr) {
+template <class Item> 
+size_t list_length(const node<Item> *head_ptr) {
     size_t answer = 0;
     const node<Item> *cursor;
     for (cursor = head_ptr; cursor != NULL; cursor = cursor->get_link())
@@ -119,7 +127,8 @@ void list_insert(node<Item> *previous_ptr, const Item &new_data) {
     previous_ptr->set_link(new node<Item>(new_data, previous_ptr->get_link()));
 }
 
-template <class Item> void list_head_remove(node<Item> *&head_ptr) {
+template <class Item> 
+void list_head_remove(node<Item> *&head_ptr) {
     if (head_ptr == NULL) // List is empty.
         return;
     node<Item> *remove_ptr;
@@ -128,7 +137,8 @@ template <class Item> void list_head_remove(node<Item> *&head_ptr) {
     delete remove_ptr;
 }
 
-template <class Item> void list_remove(node<Item> *previous_ptr) {
+template <class Item> 
+void list_remove(node<Item> *previous_ptr) {
     assert(previous_ptr != NULL); // Precondition.
 
     node<Item> *remove_ptr;
@@ -137,7 +147,8 @@ template <class Item> void list_remove(node<Item> *previous_ptr) {
     delete remove_ptr;
 }
 
-template <class Item> void list_clear(node<Item> *&head_ptr) {
+template <class Item> 
+void list_clear(node<Item> *&head_ptr) {
     while (head_ptr != NULL)
         list_head_remove(head_ptr);
 }
