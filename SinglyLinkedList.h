@@ -2,7 +2,8 @@
 #include <cstdlib>
 
 
-/* The node class template declaration */
+/* This is the template class node. The node can store data whose type is
+   Item. This node has a pointer that points to next node. */
 
 template <class Item> class node {
   public:
@@ -10,8 +11,12 @@ template <class Item> class node {
     node(const Item &init_data = Item(), node<Item> *init_link = NULL);
 
     /* member functions */
+
+    // setter
     void set_data(const Item &new_data) { data_filed = new_data; }
     void set_link(node<Item> *new_link) { link_field = new_link; }
+
+    // getter
     Item get_data() const { return data_filed; }
     node<Item> *get_link() { return link_field; }
     const node<Item> *get_link() const { return link_field; }
@@ -22,6 +27,7 @@ template <class Item> class node {
     node<Item> *link_field; // point to next node
 };
 
+// Constructor implementation
 template <class Item>
 node<Item>::node(const Item &init_data, node<Item> *init_link) {
     data_filed = init_data;
@@ -30,7 +36,8 @@ node<Item>::node(const Item &init_data, node<Item> *init_link) {
 
 
 
-/* The singly linked list function temaplte toolkit prototype  */
+/* This is SinglyLinkedList template function toolkit. The head_ptr is pointer
+   of list's head nodee. If list is empty, head_ptr is NULL. */
 
 template <class Item> 
 size_t list_length(const node<Item> *head_ptr);
@@ -65,7 +72,7 @@ void list_copy(const node<Item> *source_ptr, node<Item> *&head_ptr,
                node<Item> *&tail_ptr);
 
 
-/* The singly linked list function template toolkit definition */
+/* The singly linked list function template toolkit implementation */
 
 template <class Item> 
 size_t list_length(const node<Item> *head_ptr) {
