@@ -1,5 +1,7 @@
+#include "ranking/ranking.h"
 #include <ncurses.h>
 #include <unistd.h>
+
 #define GAMEW
 #define SCOREW
 #define MENUW
@@ -56,20 +58,26 @@ int main(int argc, char const *argv[]) {
     wbkgd(window1, COLOR_PAIR(GAMEW_PAIR_MAIN));
     wbkgd(window2, COLOR_PAIR(SCOREW_PAIR));
     wbkgd(window3, COLOR_PAIR(MENUW_PAIR));
-    int intro_result = draw_intro();
-    switch (intro_result) {
-    case 0:
-        clear;
-        draw_mainpage(window1, window2, window3);
-        getchar();
-        refresh();
-        break;
-    case 1:
-        break;
-    case 2:
-        endwin();
-        return 0;
-        break;
+    int intro_result;
+    while (true) {
+        intro_result = draw_intro();
+        switch (intro_result) {
+        case 0: // 게임 시작
+            clear;
+            draw_mainpage(window1, window2, window3);
+            getchar();
+            refresh();
+            break;
+        case 1: // 랭킹
+            init_priority_queue();
+            getchar();
+            refresh();
+            break;
+        case 2:
+            endwin();
+            return 0;
+            break;
+        }
     }
 
     endwin();
@@ -112,7 +120,7 @@ void draw_next_blocks(WINDOW *SIDE, int start_point_y) {
     wbkgd(next_blocks, COLOR_PAIR(SCOREW_PAIR));
     // touchwin(SIDE);
     wborder(next_blocks, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(next_blocks, 0, 11, "NEXT");
+    mvwprintw(next_blocks, 0, 11, "KEEP");
     wrefresh(next_blocks);
 }
 // 게임시작 - 게임판 그리기
@@ -152,9 +160,9 @@ void draw_map(WINDOW *GAME) {
 
 // 초기화면 그리기
 int draw_intro() {
-    static int window_size_x = 70;
-    static int startpoint_x = 9;
-    static int startpoint_y = 7;
+    const int window_size_x = 80;
+    const int startpoint_x = 14;
+    const int startpoint_y = 7;
     int cursor = 0;
     int choice = -1;
     int c;
@@ -166,17 +174,17 @@ int draw_intro() {
 
     wborder(main, '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(main, startpoint_y, startpoint_x,
-              "#       #   ###   ###   ####   #   #  #  #  #   #");
+              "#       #   ###   ###   ####    ###   #  #  #   #");
     mvwprintw(main, startpoint_y + 1, startpoint_x,
               "#   #   #  #   # #   #  #   #  #   #  ##    #   #");
     mvwprintw(main, startpoint_y + 2, startpoint_x,
               " # # # #   #   # #   #  #   #  #   #  # #   #   #");
     mvwprintw(main, startpoint_y + 3, startpoint_x,
               "  #   #     ###   ###   ###     ###   #  #   ###");
-    mvwprintw(main, 15, 50, "2019203032");
-    mvwprintw(main, 16, 50, "2019203013");
-    mvwprintw(main, 17, 50, "2017706057");
-    mvwprintw(main, 18, 50, "2017742041");
+    mvwprintw(main, 15, 60, "2019203032");
+    mvwprintw(main, 16, 60, "2019203013");
+    mvwprintw(main, 17, 60, "2017706057");
+    mvwprintw(main, 18, 60, "2017742041");
 
     // cbreak();
     keypad(menu, TRUE);
@@ -214,11 +222,11 @@ int draw_intro() {
 // 초기화면 메뉴 그리기
 void draw_menu(WINDOW *menu, int highlight) {
     static int y = 5;
-    static int x = 10;
+    static int x = 12;
     static int cursor = 0;
 
     wborder(menu, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(menu, 2, 31, "menu");
+    mvwprintw(menu, 2, 38, "menu");
     for (int i = 0; i < n_choices; i++) {
         if (highlight == i) {
             wattron(menu, A_REVERSE);
