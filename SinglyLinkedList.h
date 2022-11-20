@@ -1,7 +1,6 @@
 #include <cassert>
 #include <cstdlib>
 
-
 /* This is the template class node. The node can store data whose type is
    Item. This node has a pointer that points to next node. */
 
@@ -34,13 +33,10 @@ node<Item>::node(const Item &init_data, node<Item> *init_link) {
     link_field = init_link;
 }
 
-
-
 /* This is SinglyLinkedList template function toolkit. The head_ptr is pointer
    of list's head nodee. If list is empty, head_ptr is NULL. */
 
-template <class Item> 
-size_t list_length(const node<Item> *head_ptr);
+template <class Item> size_t list_length(const node<Item> *head_ptr);
 
 template <class Item>
 node<Item> *list_search(node<Item> *head_ptr, const Item &target);
@@ -58,24 +54,21 @@ void list_head_insert(node<Item> *&head_ptr, const Item &new_data);
 template <class Item>
 void list_insert(node<Item> *previous_ptr, const Item &new_data);
 
-template <class Item> 
-void list_head_remove(node<Item> *&head_ptr);
+template <class Item> void list_head_remove(node<Item> *&head_ptr);
 
-template <class Item> 
-void list_remove(node<Item> *previous_ptr);
+template <class Item> void list_remove(node<Item> *previous_ptr);
 
-template <class Item> 
-void list_clear(node<Item> *&head_ptr);
+template <class Item> void list_clear(node<Item> *&head_ptr);
 
 template <class Item>
 void list_copy(const node<Item> *source_ptr, node<Item> *&head_ptr,
                node<Item> *&tail_ptr);
 
+template <class Item> Item *list_to_array(const node<Item> *head_ptr);
 
 /* The singly linked list function template toolkit implementation */
 
-template <class Item> 
-size_t list_length(const node<Item> *head_ptr) {
+template <class Item> size_t list_length(const node<Item> *head_ptr) {
     size_t answer = 0;
     const node<Item> *cursor;
     for (cursor = head_ptr; cursor != NULL; cursor = cursor->get_link())
@@ -95,7 +88,7 @@ node<Item> *list_search(node<Item> *head_ptr, const Item &target) {
 template <class Item>
 const node<Item> *list_search(const node<Item> *head_ptr, const Item &target) {
     const node<Item> *cursor;
-    for (cursor = head_ptr; cursor != NULL; cursor = cursor->get_link_fore())
+    for (cursor = head_ptr; cursor != NULL; cursor = cursor->get_link())
         if (target == cursor->get_data())
             return cursor;
     return NULL;
@@ -135,8 +128,7 @@ void list_insert(node<Item> *previous_ptr, const Item &new_data) {
     previous_ptr->set_link(new node<Item>(new_data, previous_ptr->get_link()));
 }
 
-template <class Item> 
-void list_head_remove(node<Item> *&head_ptr) {
+template <class Item> void list_head_remove(node<Item> *&head_ptr) {
     if (head_ptr == NULL) // List is empty.
         return;
     node<Item> *remove_ptr;
@@ -145,8 +137,7 @@ void list_head_remove(node<Item> *&head_ptr) {
     delete remove_ptr;
 }
 
-template <class Item> 
-void list_remove(node<Item> *previous_ptr) {
+template <class Item> void list_remove(node<Item> *previous_ptr) {
     assert(previous_ptr != NULL); // Precondition.
 
     node<Item> *remove_ptr;
@@ -155,8 +146,7 @@ void list_remove(node<Item> *previous_ptr) {
     delete remove_ptr;
 }
 
-template <class Item> 
-void list_clear(node<Item> *&head_ptr) {
+template <class Item> void list_clear(node<Item> *&head_ptr) {
     while (head_ptr != NULL)
         list_head_remove(head_ptr);
 }
@@ -178,4 +168,17 @@ void list_copy(const node<Item> *source_ptr, node<Item> *&head_ptr,
         tail_ptr = tail_ptr->get_link();
         source_ptr = source_ptr->get_link();
     }
+}
+
+template <class Item> Item *list_to_array(const node<Item> *head_ptr) {
+    node<Item> *cusor;
+    size_t size = list_length(head_ptr);
+    Item *arr = new Item[size];
+    int i = 0;
+
+    for (cusor = head_ptr; cusor != NULL; cusor = cusor->get_link()) {
+        arr[i++] = cusor->get_data();
+    }
+
+    return arr;
 }
