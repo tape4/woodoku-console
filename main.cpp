@@ -1,5 +1,8 @@
+#include "Queue.h"
 #include <ncurses.h>
+#include <random>
 #include <unistd.h>
+
 #define GAMEW
 #define SCOREW
 #define MENUW
@@ -16,6 +19,7 @@ void draw_menu(WINDOW *, int);
 void draw_mainpage(WINDOW *, WINDOW *, WINDOW *);
 void draw_side(WINDOW *);
 void draw_next_blocks(WINDOW *, int);
+void next_block(WINDOW *FOOTER, queue<int (*)[5]> &blocks);
 
 char *choices[] = {
     "Start",
@@ -29,6 +33,7 @@ int main(int argc, char const *argv[]) {
     WINDOW *window1;
     WINDOW *window2;
     WINDOW *window3;
+    queue<int(*)[5]> blocks;
 
     initscr();
     noecho(); // 입력을 자동으로 화면에 출력하지 않도록 합니다.
@@ -51,7 +56,7 @@ int main(int argc, char const *argv[]) {
     intro = newwin(31, 80, 0, 0);
     window1 = newwin(25, 50, 0, 0);
     window2 = newwin(25, 30, 0, 50);
-    window3 = newwin(6, 80, 25, 0);
+    window3 = newwin(9, 80, 25, 0);
 
     wbkgd(window1, COLOR_PAIR(GAMEW_PAIR_MAIN));
     wbkgd(window2, COLOR_PAIR(SCOREW_PAIR));
@@ -61,6 +66,7 @@ int main(int argc, char const *argv[]) {
     case 0:
         clear;
         draw_mainpage(window1, window2, window3);
+        next_block(window3, blocks);
         getchar();
         refresh();
         break;
@@ -229,4 +235,77 @@ void draw_menu(WINDOW *menu, int highlight) {
         }
     }
     wrefresh(menu);
+}
+
+void next_block(WINDOW *FOOTER, queue<int (*)[5]> &blocks) {
+    int x;
+    int y;
+    int count = 0;
+
+    wbkgd(FOOTER, COLOR_PAIR(MENUW_PAIR));
+
+    if (blocks.empty()) {
+        int block1[5][5] = {{0, 0, 1, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 1, 0, 0}};
+
+        int block2[5][5] = {{0, 0, 0, 0, 0},
+                            {0, 1, 0, 0, 0},
+                            {0, 1, 0, 0, 0},
+                            {0, 1, 1, 1, 0},
+                            {0, 0, 0, 0, 0}};
+
+        int block3[5][5] = {{0, 0, 0, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 1, 1, 1, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 0, 0, 0}};
+
+        int block4[5][5] = {{0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0},
+                            {1, 1, 1, 1, 1},
+                            {0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0}};
+
+        int block5[5][5] = {{0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0},
+                            {0, 1, 0, 0, 0},
+                            {0, 1, 1, 1, 0},
+                            {0, 0, 0, 0, 0}};
+
+        blocks.push(block1);
+        blocks.push(block2);
+        blocks.push(block3);
+        blocks.push(block4);
+        blocks.push(block5);
+    }
+
+    queue<int(*)[5]> copy(blocks);
+
+    while (!copy.empty()) {
+        int(*block)[5] = copy.front();
+        copy.pop();
+        for (int i = 0; i < 5; i++) {
+            x = 8 * count + 8 + count * 5;
+            y = i + 2;
+            for (int j = 0; j < 5; j++) {
+                if (block[i][j] == 0) {
+                    x++;
+                } else {
+                    wattron(FOOTER, COLOR_PAIR(GAMEW_PAIR_MAIN));
+                    mvwprintw(FOOTER, y, x, " ");
+                    wattron(FOOTER, COLOR_PAIR(MENUW_PAIR));
+                    x++;
+                }
+            }
+        }
+
+        count++;
+    }
+
+    wrefresh(FOOTER);
+
+    blocks.pop();
 }
