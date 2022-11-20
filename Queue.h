@@ -23,6 +23,8 @@ template <class Item> class queue {
 
     size_t size() const { return count; }
 
+    Item *to_array() const;
+
   private:
     node<Item> *front_ptr; // point to the node that has the first item.
     node<Item> *rear_ptr;  // point to the node that has the last item.
@@ -71,4 +73,8 @@ template <class Item> void queue<Item>::operator=(const queue<Item> &source) {
 template <class Item> Item queue<Item>::front() const {
     assert(!empty()); // Precondition.
     return front_ptr->get_data();
+}
+
+template <class Item> Item *queue<Item>::to_array() const {
+    return list_to_array(front_ptr);
 }
