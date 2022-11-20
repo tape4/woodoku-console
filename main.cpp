@@ -243,6 +243,7 @@ void next_block(WINDOW *FOOTER, queue<int (*)[5]> &blocks) {
     int count = 0;
 
     wbkgd(FOOTER, COLOR_PAIR(MENUW_PAIR));
+    werase(FOOTER);
 
     if (blocks.empty()) {
         int block1[5][5] = {{0, 0, 1, 0, 0},
