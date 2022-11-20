@@ -171,7 +171,7 @@ void list_copy(const node<Item> *source_ptr, node<Item> *&head_ptr,
 }
 
 template <class Item> Item *list_to_array(const node<Item> *head_ptr) {
-    node<Item> *cusor;
+    const node<Item> *cusor;
     size_t size = list_length(head_ptr);
     Item *arr = new Item[size];
     int i = 0;
