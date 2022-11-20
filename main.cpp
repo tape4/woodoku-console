@@ -17,7 +17,7 @@ void draw_map(WINDOW *);
 void draw_menu(WINDOW *, int);
 void draw_mainpage(WINDOW *, WINDOW *, WINDOW *);
 void draw_side(WINDOW *);
-void draw_next_blocks(WINDOW *, int);
+void draw_keep_blocks(WINDOW *, int);
 
 char *choices[] = {
     "Start",
@@ -36,6 +36,7 @@ int main(int argc, char const *argv[]) {
     noecho(); // 입력을 자동으로 화면에 출력하지 않도록 합니다.
     curs_set(FALSE); // cursor를 보이지 않게 합니다.
 
+    // 터미널 색 설정
     if (has_colors() == FALSE) {
         puts("Terminal does not support colors!");
         endwin();
@@ -50,19 +51,24 @@ int main(int argc, char const *argv[]) {
     }
 
     refresh();
+
+    // 윈도우 크기 설정
     intro = newwin(31, 80, 0, 0);
     window1 = newwin(25, 50, 0, 0);
     window2 = newwin(25, 30, 0, 50);
     window3 = newwin(6, 80, 25, 0);
 
+    // 윈도우 색 설정
     wbkgd(window1, COLOR_PAIR(GAMEW_PAIR_MAIN));
     wbkgd(window2, COLOR_PAIR(SCOREW_PAIR));
     wbkgd(window3, COLOR_PAIR(MENUW_PAIR));
     int intro_result;
+
+    // 메인화면
     while (true) {
-        intro_result = draw_intro();
-        switch (intro_result) {
-        case 0: // 게임 시작
+        intro_result = draw_intro(); // 메인화면 그리기
+        switch (intro_result) { // 메인화면 선택에 따라 다른 화면 출력
+        case 0:                 // 게임 시작
             clear;
             draw_mainpage(window1, window2, window3);
             getchar();
@@ -73,7 +79,7 @@ int main(int argc, char const *argv[]) {
             getchar();
             refresh();
             break;
-        case 2:
+        case 2: // 나가기
             endwin();
             return 0;
             break;
@@ -81,18 +87,18 @@ int main(int argc, char const *argv[]) {
     }
 
     endwin();
-
     return 0;
 }
 
 // 게임시작 - 화면 그리기
 void draw_mainpage(WINDOW *GAME, WINDOW *SIDE, WINDOW *FOOTER) {
-    draw_map(GAME);
-    draw_side(SIDE);
-    wborder(FOOTER, '|', '|', '-', '-', '+', '+', '+', '+');
+    draw_map(GAME);  // 게임이 진행되는 화면 그리기
+    draw_side(SIDE); // 오른쪽 화면 그리기
+    wborder(FOOTER, '|', '|', '-', '-', '+', '+', '+',
+            '+'); // 다음 블럭(아래쪽) 화면 테두리 설정
     wprintw(FOOTER, "FOOTER BOARD");
     wprintw(SIDE, "SIDE BOARD");
-    wrefresh(FOOTER);
+    wrefresh(FOOTER); // 다음 블럭(아래쪽) 화면 그리기
 }
 
 // 게임시작 - 오른쪽 그리기
@@ -107,15 +113,17 @@ void draw_side(WINDOW *SIDE) {
     };
     int n_keyList = sizeof(keyList) / sizeof(char *);
 
+    // 화면 테두리 설정
     wborder(SIDE, '|', '|', '-', '-', '+', '+', '+', '+');
     for (int i = 0; i < n_keyList; i++) {
         mvwprintw(SIDE, 2 + i, 4, "%s", keyList[i]);
     }
-    wrefresh(SIDE);
-    draw_next_blocks(SIDE, n_keyList);
+    wrefresh(SIDE); // 화면 그리기
+
+    draw_keep_blocks(SIDE, n_keyList);
 }
-// 게임시작 - 오른쪽 subwin (next)
-void draw_next_blocks(WINDOW *SIDE, int start_point_y) {
+// 게임시작 - 오른쪽화면 내 다음 보관중인 블럭 출력 subwin (keep)
+void draw_keep_blocks(WINDOW *SIDE, int start_point_y) {
     WINDOW *next_blocks = subwin(SIDE, 10, 26, start_point_y + 3, 52);
     wbkgd(next_blocks, COLOR_PAIR(SCOREW_PAIR));
     // touchwin(SIDE);
@@ -128,7 +136,7 @@ void draw_map(WINDOW *GAME) {
     static int startpoint_x = 6;
     static int startpoint_y = 4;
 
-    wborder(GAME, '|', '|', '-', '-', '+', '+', '+', '+');
+    wborder(GAME, '|', '|', '-', '-', '+', '+', '+', '+'); // 화면 테두리 설정
     mvwprintw(GAME, 2, 19, "GAME BOARD");
     for (int i = startpoint_y; i <= startpoint_y + 18; i += 2) {
         if ((i - startpoint_y) % 6 == 0) {
@@ -167,12 +175,15 @@ int draw_intro() {
     int choice = -1;
     int c;
 
-    WINDOW *main = newwin(20, window_size_x, 0, 0);
-    WINDOW *menu = newwin(11, window_size_x, 20, 0);
-    wbkgd(main, COLOR_PAIR(GAMEW_PAIR_R));
-    wbkgd(menu, COLOR_PAIR(SCOREW_PAIR));
+    WINDOW *main = newwin(20, window_size_x, 0, 0);  // 로고 화면 생성
+    WINDOW *menu = newwin(11, window_size_x, 20, 0); // 메뉴 화면 생성
+    wbkgd(main, COLOR_PAIR(GAMEW_PAIR_R));           // 로고 화면 색 설정
+    wbkgd(menu, COLOR_PAIR(SCOREW_PAIR));            // 메뉴 화면 색 설정
 
+    // 로고 화면 테두리 설정
     wborder(main, '|', '|', '-', '-', '+', '+', '+', '+');
+
+    // 로고 그리기
     mvwprintw(main, startpoint_y, startpoint_x,
               "#       #   ###   ###   ####    ###   #  #  #   #");
     mvwprintw(main, startpoint_y + 1, startpoint_x,
@@ -181,6 +192,8 @@ int draw_intro() {
               " # # # #   #   # #   #  #   #  #   #  # #   #   #");
     mvwprintw(main, startpoint_y + 3, startpoint_x,
               "  #   #     ###   ###   ###     ###   #  #   ###");
+
+    // 학번을 적었는데 한글이 출력이안되서 고민중입니다.
     mvwprintw(main, 15, 60, "2019203032");
     mvwprintw(main, 16, 60, "2019203013");
     mvwprintw(main, 17, 60, "2017706057");
@@ -191,26 +204,31 @@ int draw_intro() {
     wrefresh(main);
     draw_menu(menu, cursor);
 
+    // 키보드 입력받기
     while (1) {
         c = wgetch(menu);
         switch (c) {
+            // 왼쪽
         case KEY_LEFT:
             if (cursor == 0)
                 cursor = n_choices - 1;
             else
                 cursor--;
             break;
+            // 오른쪽
         case KEY_RIGHT:
             if (cursor == n_choices - 1)
                 cursor = 0;
             else
                 cursor++;
             break;
+            // 엔터 (=10)
         case 10:
             werase(menu);
             choice = cursor;
             return choice;
             break;
+            // 그외
         default:
             mvwprintw(menu, 9, 2, "Select input [ \"<-\", \"ENTER\", \"->\" ]");
             break;
@@ -225,14 +243,18 @@ void draw_menu(WINDOW *menu, int highlight) {
     static int x = 12;
     static int cursor = 0;
 
+    // 메뉴화면 테두리 설정
     wborder(menu, '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(menu, 2, 38, "menu");
     for (int i = 0; i < n_choices; i++) {
+        // 현재 커서 값에 따라 메뉴 색 다르게 출력
+        // 해당 색 이면 다르게 출력
         if (highlight == i) {
-            wattron(menu, A_REVERSE);
+            wattron(menu, A_REVERSE); // 색 설정
             mvwprintw(menu, y, x + (2 * x) * i, "%s", choices[i]);
-            wattroff(menu, A_REVERSE);
+            wattroff(menu, A_REVERSE); // 색 설정 끄기
         } else {
+            // 커서가 아닌 다른 메뉴는 그대로 출력
             mvwprintw(menu, y, x + (2 * x) * i, "%s", choices[i]);
         }
     }
