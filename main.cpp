@@ -1,6 +1,5 @@
-#include "Queue.h"
+#include "ranking/ranking.h"
 #include <ncurses.h>
-#include <random>
 #include <unistd.h>
 
 #define GAMEW
@@ -18,8 +17,7 @@ void draw_map(WINDOW *);
 void draw_menu(WINDOW *, int);
 void draw_mainpage(WINDOW *, WINDOW *, WINDOW *);
 void draw_side(WINDOW *);
-void draw_next_blocks(WINDOW *, int);
-void next_block(WINDOW *FOOTER, queue<int (*)[5]> &blocks);
+void draw_keep_blocks(WINDOW *, int);
 
 char *choices[] = {
     "Start",
@@ -33,12 +31,12 @@ int main(int argc, char const *argv[]) {
     WINDOW *window1;
     WINDOW *window2;
     WINDOW *window3;
-    queue<int(*)[5]> blocks;
 
     initscr();
     noecho(); // 입력을 자동으로 화면에 출력하지 않도록 합니다.
     curs_set(FALSE); // cursor를 보이지 않게 합니다.
 
+    // 터미널 색 설정
     if (has_colors() == FALSE) {
         puts("Terminal does not support colors!");
         endwin();
@@ -53,44 +51,54 @@ int main(int argc, char const *argv[]) {
     }
 
     refresh();
+
+    // 윈도우 크기 설정
     intro = newwin(31, 80, 0, 0);
     window1 = newwin(25, 50, 0, 0);
     window2 = newwin(25, 30, 0, 50);
     window3 = newwin(9, 80, 25, 0);
 
+    // 윈도우 색 설정
     wbkgd(window1, COLOR_PAIR(GAMEW_PAIR_MAIN));
     wbkgd(window2, COLOR_PAIR(SCOREW_PAIR));
     wbkgd(window3, COLOR_PAIR(MENUW_PAIR));
-    int intro_result = draw_intro();
-    switch (intro_result) {
-    case 0:
-        clear;
-        draw_mainpage(window1, window2, window3);
-        next_block(window3, blocks);
-        getchar();
-        refresh();
-        break;
-    case 1:
-        break;
-    case 2:
-        endwin();
-        return 0;
-        break;
+    int intro_result;
+
+    // 메인화면
+    while (true) {
+        intro_result = draw_intro(); // 메인화면 그리기
+        switch (intro_result) { // 메인화면 선택에 따라 다른 화면 출력
+        case 0:                 // 게임 시작
+            clear;
+            draw_mainpage(window1, window2, window3);
+            getchar();
+            refresh();
+            break;
+        case 1: // 랭킹
+            init_priority_queue();
+            getchar();
+            refresh();
+            break;
+        case 2: // 나가기
+            endwin();
+            return 0;
+            break;
+        }
     }
 
     endwin();
-
     return 0;
 }
 
 // 게임시작 - 화면 그리기
 void draw_mainpage(WINDOW *GAME, WINDOW *SIDE, WINDOW *FOOTER) {
-    draw_map(GAME);
-    draw_side(SIDE);
-    wborder(FOOTER, '|', '|', '-', '-', '+', '+', '+', '+');
+    draw_map(GAME);  // 게임이 진행되는 화면 그리기
+    draw_side(SIDE); // 오른쪽 화면 그리기
+    wborder(FOOTER, '|', '|', '-', '-', '+', '+', '+',
+            '+'); // 다음 블럭(아래쪽) 화면 테두리 설정
     wprintw(FOOTER, "FOOTER BOARD");
     wprintw(SIDE, "SIDE BOARD");
-    wrefresh(FOOTER);
+    wrefresh(FOOTER); // 다음 블럭(아래쪽) 화면 그리기
 }
 
 // 게임시작 - 오른쪽 그리기
@@ -105,20 +113,22 @@ void draw_side(WINDOW *SIDE) {
     };
     int n_keyList = sizeof(keyList) / sizeof(char *);
 
+    // 화면 테두리 설정
     wborder(SIDE, '|', '|', '-', '-', '+', '+', '+', '+');
     for (int i = 0; i < n_keyList; i++) {
         mvwprintw(SIDE, 2 + i, 4, "%s", keyList[i]);
     }
-    wrefresh(SIDE);
-    draw_next_blocks(SIDE, n_keyList);
+    wrefresh(SIDE); // 화면 그리기
+
+    draw_keep_blocks(SIDE, n_keyList);
 }
-// 게임시작 - 오른쪽 subwin (next)
-void draw_next_blocks(WINDOW *SIDE, int start_point_y) {
+// 게임시작 - 오른쪽화면 내 다음 보관중인 블럭 출력 subwin (keep)
+void draw_keep_blocks(WINDOW *SIDE, int start_point_y) {
     WINDOW *next_blocks = subwin(SIDE, 10, 26, start_point_y + 3, 52);
     wbkgd(next_blocks, COLOR_PAIR(SCOREW_PAIR));
     // touchwin(SIDE);
     wborder(next_blocks, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(next_blocks, 0, 11, "NEXT");
+    mvwprintw(next_blocks, 0, 11, "KEEP");
     wrefresh(next_blocks);
 }
 // 게임시작 - 게임판 그리기
@@ -126,7 +136,7 @@ void draw_map(WINDOW *GAME) {
     static int startpoint_x = 6;
     static int startpoint_y = 4;
 
-    wborder(GAME, '|', '|', '-', '-', '+', '+', '+', '+');
+    wborder(GAME, '|', '|', '-', '-', '+', '+', '+', '+'); // 화면 테두리 설정
     mvwprintw(GAME, 2, 19, "GAME BOARD");
     for (int i = startpoint_y; i <= startpoint_y + 18; i += 2) {
         if ((i - startpoint_y) % 6 == 0) {
@@ -158,57 +168,67 @@ void draw_map(WINDOW *GAME) {
 
 // 초기화면 그리기
 int draw_intro() {
-    static int window_size_x = 70;
-    static int startpoint_x = 9;
-    static int startpoint_y = 7;
+    const int window_size_x = 80;
+    const int startpoint_x = 14;
+    const int startpoint_y = 7;
     int cursor = 0;
     int choice = -1;
     int c;
 
-    WINDOW *main = newwin(20, window_size_x, 0, 0);
-    WINDOW *menu = newwin(11, window_size_x, 20, 0);
-    wbkgd(main, COLOR_PAIR(GAMEW_PAIR_R));
-    wbkgd(menu, COLOR_PAIR(SCOREW_PAIR));
+    WINDOW *main = newwin(20, window_size_x, 0, 0);  // 로고 화면 생성
+    WINDOW *menu = newwin(11, window_size_x, 20, 0); // 메뉴 화면 생성
+    wbkgd(main, COLOR_PAIR(GAMEW_PAIR_R));           // 로고 화면 색 설정
+    wbkgd(menu, COLOR_PAIR(SCOREW_PAIR));            // 메뉴 화면 색 설정
 
+    // 로고 화면 테두리 설정
     wborder(main, '|', '|', '-', '-', '+', '+', '+', '+');
+
+    // 로고 그리기
     mvwprintw(main, startpoint_y, startpoint_x,
-              "#       #   ###   ###   ####   #   #  #  #  #   #");
+              "#       #   ###   ###   ####    ###   #  #  #   #");
     mvwprintw(main, startpoint_y + 1, startpoint_x,
               "#   #   #  #   # #   #  #   #  #   #  ##    #   #");
     mvwprintw(main, startpoint_y + 2, startpoint_x,
               " # # # #   #   # #   #  #   #  #   #  # #   #   #");
     mvwprintw(main, startpoint_y + 3, startpoint_x,
               "  #   #     ###   ###   ###     ###   #  #   ###");
-    mvwprintw(main, 15, 50, "2019203032");
-    mvwprintw(main, 16, 50, "2019203013");
-    mvwprintw(main, 17, 50, "2017706057");
-    mvwprintw(main, 18, 50, "2017742041");
+
+    // 학번을 적었는데 한글이 출력이안되서 고민중입니다.
+    mvwprintw(main, 15, 60, "2019203032");
+    mvwprintw(main, 16, 60, "2019203013");
+    mvwprintw(main, 17, 60, "2017706057");
+    mvwprintw(main, 18, 60, "2017742041");
 
     // cbreak();
     keypad(menu, TRUE);
     wrefresh(main);
     draw_menu(menu, cursor);
 
+    // 키보드 입력받기
     while (1) {
         c = wgetch(menu);
         switch (c) {
+            // 왼쪽
         case KEY_LEFT:
             if (cursor == 0)
                 cursor = n_choices - 1;
             else
                 cursor--;
             break;
+            // 오른쪽
         case KEY_RIGHT:
             if (cursor == n_choices - 1)
                 cursor = 0;
             else
                 cursor++;
             break;
+            // 엔터 (=10)
         case 10:
             werase(menu);
             choice = cursor;
             return choice;
             break;
+            // 그외
         default:
             mvwprintw(menu, 9, 2, "Select input [ \"<-\", \"ENTER\", \"->\" ]");
             break;
@@ -220,93 +240,23 @@ int draw_intro() {
 // 초기화면 메뉴 그리기
 void draw_menu(WINDOW *menu, int highlight) {
     static int y = 5;
-    static int x = 10;
+    static int x = 12;
     static int cursor = 0;
 
+    // 메뉴화면 테두리 설정
     wborder(menu, '|', '|', '-', '-', '+', '+', '+', '+');
-    mvwprintw(menu, 2, 31, "menu");
+    mvwprintw(menu, 2, 38, "menu");
     for (int i = 0; i < n_choices; i++) {
+        // 현재 커서 값에 따라 메뉴 색 다르게 출력
+        // 해당 색 이면 다르게 출력
         if (highlight == i) {
-            wattron(menu, A_REVERSE);
+            wattron(menu, A_REVERSE); // 색 설정
             mvwprintw(menu, y, x + (2 * x) * i, "%s", choices[i]);
-            wattroff(menu, A_REVERSE);
+            wattroff(menu, A_REVERSE); // 색 설정 끄기
         } else {
+            // 커서가 아닌 다른 메뉴는 그대로 출력
             mvwprintw(menu, y, x + (2 * x) * i, "%s", choices[i]);
         }
     }
     wrefresh(menu);
-}
-
-void next_block(WINDOW *FOOTER, queue<int (*)[5]> &blocks) {
-    int x;
-    int y;
-    int count = 0;
-
-    wbkgd(FOOTER, COLOR_PAIR(MENUW_PAIR));
-    werase(FOOTER);
-
-    if (blocks.empty()) {
-        int block1[5][5] = {{0, 0, 1, 0, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 0, 1, 0, 0}};
-
-        int block2[5][5] = {{0, 0, 0, 0, 0},
-                            {0, 1, 0, 0, 0},
-                            {0, 1, 0, 0, 0},
-                            {0, 1, 1, 1, 0},
-                            {0, 0, 0, 0, 0}};
-
-        int block3[5][5] = {{0, 0, 0, 0, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 1, 1, 1, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 0, 0, 0, 0}};
-
-        int block4[5][5] = {{0, 0, 0, 0, 0},
-                            {0, 0, 0, 0, 0},
-                            {1, 1, 1, 1, 1},
-                            {0, 0, 0, 0, 0},
-                            {0, 0, 0, 0, 0}};
-
-        int block5[5][5] = {{0, 0, 0, 0, 0},
-                            {0, 0, 0, 0, 0},
-                            {0, 1, 0, 0, 0},
-                            {0, 1, 1, 1, 0},
-                            {0, 0, 0, 0, 0}};
-
-        blocks.push(block1);
-        blocks.push(block2);
-        blocks.push(block3);
-        blocks.push(block4);
-        blocks.push(block5);
-    }
-
-    queue<int(*)[5]> copy(blocks);
-
-    while (!copy.empty()) {
-        int(*block)[5] = copy.front();
-        copy.pop();
-        for (int i = 0; i < 5; i++) {
-            x = 8 * count + 8 + count * 5;
-            y = i + 2;
-            for (int j = 0; j < 5; j++) {
-                if (block[i][j] == 0) {
-                    x++;
-                } else {
-                    wattron(FOOTER, COLOR_PAIR(GAMEW_PAIR_MAIN));
-                    mvwprintw(FOOTER, y, x, " ");
-                    wattron(FOOTER, COLOR_PAIR(MENUW_PAIR));
-                    x++;
-                }
-            }
-        }
-
-        count++;
-    }
-
-    wrefresh(FOOTER);
-
-    blocks.pop();
 }
