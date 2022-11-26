@@ -1,3 +1,4 @@
+#include "Queue.h"
 #include "ranking/ranking.h"
 #include <ncurses.h>
 #include <unistd.h>
@@ -18,6 +19,7 @@ void draw_menu(WINDOW *, int);
 void draw_mainpage(WINDOW *, WINDOW *, WINDOW *);
 void draw_side(WINDOW *);
 void draw_keep_blocks(WINDOW *, int);
+int *next_block(WINDOW *FOOTER, queue<int (*)[5]> &blocks);
 
 char *choices[] = {
     "Start",
@@ -56,7 +58,7 @@ int main(int argc, char const *argv[]) {
     intro = newwin(31, 80, 0, 0);
     window1 = newwin(25, 50, 0, 0);
     window2 = newwin(25, 30, 0, 50);
-    window3 = newwin(6, 80, 25, 0);
+    window3 = newwin(9, 80, 25, 0);
 
     // 윈도우 색 설정
     wbkgd(window1, COLOR_PAIR(GAMEW_PAIR_MAIN));
@@ -75,7 +77,7 @@ int main(int argc, char const *argv[]) {
             refresh();
             break;
         case 1: // 랭킹
-            init_priority_queue();
+            // init_priority_queue();
             getchar();
             refresh();
             break;
@@ -94,10 +96,14 @@ int main(int argc, char const *argv[]) {
 void draw_mainpage(WINDOW *GAME, WINDOW *SIDE, WINDOW *FOOTER) {
     draw_map(GAME);  // 게임이 진행되는 화면 그리기
     draw_side(SIDE); // 오른쪽 화면 그리기
-    wborder(FOOTER, '|', '|', '-', '-', '+', '+', '+',
-            '+'); // 다음 블럭(아래쪽) 화면 테두리 설정
-    wprintw(FOOTER, "FOOTER BOARD");
-    wprintw(SIDE, "SIDE BOARD");
+                     //    draw_next_block(FOOTER);
+
+    queue<int(*)[5]> blocks;
+    int(*block)[5];
+    block = (int(*)[5])next_block(FOOTER, blocks);
+    //    wborder(FOOTER, '|', '|', '-', '-', '+', '+', '+',
+    //            '+'); // 다음 블럭(아래쪽) 화면 테두리 설정
+    //    wprintw(FOOTER, "FOOTER BOARD");
     wrefresh(FOOTER); // 다음 블럭(아래쪽) 화면 그리기
 }
 
@@ -115,6 +121,7 @@ void draw_side(WINDOW *SIDE) {
 
     // 화면 테두리 설정
     wborder(SIDE, '|', '|', '-', '-', '+', '+', '+', '+');
+    wprintw(SIDE, "SIDE BOARD");
     for (int i = 0; i < n_keyList; i++) {
         mvwprintw(SIDE, 2 + i, 4, "%s", keyList[i]);
     }
@@ -259,4 +266,130 @@ void draw_menu(WINDOW *menu, int highlight) {
         }
     }
     wrefresh(menu);
+}
+/*queue<int(*)[5]> blocks;
+    int(*block)[5];
+    block = (int(*)[5])next_block(window3, blocks);
+    // block[i][j] 로 접근*/
+
+int *next_block(WINDOW *FOOTER, queue<int (*)[5]> &blocks) {
+    int x;
+    int y;
+    int count = 0;
+    int(*block)[5];
+
+    wbkgd(FOOTER, COLOR_PAIR(MENUW_PAIR));
+    werase(FOOTER);
+
+    wborder(FOOTER, '|', '|', '-', '-', '+', '+', '+', '+');
+    wprintw(FOOTER, "FOOTER BOARD");
+
+    if (blocks.empty()) { // 가장 처음 호출시 큐가 비어있기 때문에 블록 추가
+        // 블록 객체를 랜덤으로 받는 코드로 추후 업그레이드 필요
+        int block1[5][5] = {{0, 0, 1, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 1, 0, 0}};
+
+        int block2[5][5] = {{0, 0, 0, 0, 0},
+                            {0, 1, 0, 0, 0},
+                            {0, 1, 0, 0, 0},
+                            {0, 1, 1, 1, 0},
+                            {0, 0, 0, 0, 0}};
+
+        int block3[5][5] = {{0, 0, 0, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 1, 1, 1, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 0, 0, 0}};
+
+        int block4[5][5] = {{0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0},
+                            {1, 1, 1, 1, 1},
+                            {0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0}};
+
+        int block5[5][5] = {{0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0},
+                            {0, 1, 0, 0, 0},
+                            {0, 1, 1, 1, 0},
+                            {0, 0, 0, 0, 0}};
+
+        blocks.push(block1);
+        blocks.push(block2);
+        blocks.push(block3);
+        blocks.push(block4);
+        blocks.push(block5);
+    }
+
+    block = blocks.front(); // 반환할 블록
+    blocks.pop();
+
+    if (blocks.empty()) { // 큐에서 마지막 블록을 pop한 경우 다시 큐에 블록 추가
+        // 블록 객체를 랜덤으로 받는 코드로 추후 업그레이드 필요
+        int block1[5][5] = {{0, 0, 1, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 1, 0, 0}};
+
+        int block2[5][5] = {{0, 0, 0, 0, 0},
+                            {0, 1, 0, 0, 0},
+                            {0, 1, 0, 0, 0},
+                            {0, 1, 1, 1, 0},
+                            {0, 0, 0, 0, 0}};
+
+        int block3[5][5] = {{0, 0, 0, 0, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 1, 1, 1, 0},
+                            {0, 0, 1, 0, 0},
+                            {0, 0, 0, 0, 0}};
+
+        int block4[5][5] = {{0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0},
+                            {1, 1, 1, 1, 1},
+                            {0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0}};
+
+        int block5[5][5] = {{0, 0, 0, 0, 0},
+                            {0, 0, 0, 0, 0},
+                            {0, 1, 0, 0, 0},
+                            {0, 1, 1, 1, 0},
+                            {0, 0, 0, 0, 0}};
+
+        blocks.push(block1);
+        blocks.push(block2);
+        blocks.push(block3);
+        blocks.push(block4);
+        blocks.push(block5);
+    }
+
+    queue<int(*)[5]> copy(blocks);
+
+    while (!copy.empty()) { // FOOTER 윈도우에 블록 모두 출력
+        int(*block)[5] = copy.front(); // front에 있는 블록 저장
+        copy.pop();
+        for (int i = 0; i < 5; i++) {
+            x = 4 * count + 7 + count * 10;
+            y = i + 2;
+            for (int j = 0; j < 5; j++) {
+                if (block[i][j] == 0) { // 해당 칸은 블록이 아님
+                    x += 2;
+                } else { // 해당 칸은 블록임
+                    // 블록은 다른색으로 출력
+                    wattron(FOOTER, COLOR_PAIR(GAMEW_PAIR_MAIN));
+                    mvwprintw(FOOTER, y, x, "  ");
+                    wattron(FOOTER, COLOR_PAIR(MENUW_PAIR));
+                    x += 2;
+                }
+            }
+        }
+
+        count++;
+    }
+
+    wrefresh(FOOTER);
+
+    return (int *)block;
 }
