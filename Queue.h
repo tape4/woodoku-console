@@ -1,5 +1,9 @@
 #include "SinglyLinkedList.h"
+<<<<<<< HEAD
 #include "block.h"
+=======
+
+>>>>>>> b24603e83b36714c6ea61aa30f203da8e93d7517
 template <class Item> class queue {
   public:
     // Default Constructor
