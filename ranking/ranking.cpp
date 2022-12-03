@@ -19,10 +19,11 @@ void draw_ranking();
 char *get_ranking(int place);
 
 void init_priority_queue() {
-    init_test_data(); // 임시로 10개의 더미 데이터 추가
-
+    /* init_test_data();
+    // 임시로 10개의 더미 데이터 추가
+*/
     draw_ranking();
-};
+}
 
 // 임시로 10개의 더미 데이터 추가
 void init_test_data() {
@@ -167,4 +168,21 @@ char *get_ranking(int place) {
         strcat(ranking, "th");
     }
     return ranking;
+}
+
+void append_ranking(char *name, int score) {
+    int fd;
+
+    // 파일 열기
+    if ((fd = open("./ranking_board.dat", O_CREAT | O_WRONLY | O_APPEND,
+                   S_IRWXU)) == -1) {
+        // file Open error!
+        exit(1);
+    }
+    Data *tempData = (Data *)malloc(sizeof(Data));
+
+    memset(tempData->name, '\0', 33);
+    strcat(tempData->name, name);
+    tempData->score = score;
+    write(fd, (Data *)tempData, sizeof(Data));
 }
