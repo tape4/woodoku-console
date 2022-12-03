@@ -1,3 +1,4 @@
+#pragma once
 #include "SinglyLinkedList.h"
 
 template <class Item> class queue {
