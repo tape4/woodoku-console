@@ -170,6 +170,7 @@ char *get_ranking(int place) {
     return ranking;
 }
 
+/* 랭킹 파일에 이름과 점수를 추가하는 함수 */
 void append_ranking(char *name, int score) {
     int fd;
 
@@ -185,4 +186,27 @@ void append_ranking(char *name, int score) {
     strcat(tempData->name, name);
     tempData->score = score;
     write(fd, (Data *)tempData, sizeof(Data));
+}
+
+/* 파일로부터 최고점수를 반환하는 함수 */
+int get_best_score() {
+    int fd, rsize;
+    int best_score = 0;
+
+    Data *readBuffer =
+        (Data *)malloc(sizeof(Data)); // 파일에서 데이터를 읽을 버퍼
+    // 버퍼 초기화
+    memset(readBuffer->name, '\0', 33);
+    readBuffer->score = 0;
+
+    // 파일 열기
+    fd = open("./ranking_board.dat", O_RDONLY, 0644);
+
+    // 파일에서 가장 큰 score를 받는다
+    while ((rsize = read(fd, (Data *)readBuffer, sizeof(Data))) > 0) {
+        if (readBuffer->score > best_score)
+            best_score = readBuffer->score;
+    }
+
+    return best_score;
 }
