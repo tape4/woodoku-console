@@ -2,7 +2,7 @@
 
 /* 9*9 배열인 game_board를 받아서 다 찬 칸을 0으로 만든다
    점수를 계산해서 score에 반환 */
-void update_score(int (*game_board)[9], int &score) {
+void check_board(int (*game_board)[9], int &score) {
     int i, j;
     bool is_fill;          // 9칸이 찼는지를 저장
     int reduplication = 0; // 한번에 블록을 다 채운 중복 횟수
@@ -97,5 +97,16 @@ void update_score(int (*game_board)[9], int &score) {
 
     if (reduplication != 0) { // 점수 계산 후 더한다
         score += 18 + 10 * (reduplication - 1);
+    }
+}
+
+/* 블록을 keep하면 해당 블록의 크기만큼 점수를 추가하는 함수 */
+void plus_score(int &score, int (*block)[5]) {
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            if (block[i][j] == 1) {
+                score++;
+            }
+        }
     }
 }

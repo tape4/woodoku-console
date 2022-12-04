@@ -1,3 +1,4 @@
 #pragma once
 
-void update_score(int (*)[9], int &);
+void check_board(int (*)[9], int &);
+void plus_score(int &, int (*)[5]);
