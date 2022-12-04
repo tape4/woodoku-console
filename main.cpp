@@ -25,6 +25,7 @@ void draw_mainpage(WINDOW *, WINDOW *, WINDOW *);
 void draw_side(WINDOW *);
 void draw_keep_blocks(WINDOW *, int, int (*)[5]);
 void next_block(WINDOW *, queue<int **> &, int (*)[5]);
+void Keyboard(WINDOW *);
 void exit_game(WINDOW *, WINDOW *, WINDOW *, queue<int **> &);
 void input_name(char *);
 
@@ -34,6 +35,9 @@ char *choices[] = {
     "exit",
 };
 int n_choices = sizeof(choices) / sizeof(char *);
+
+bool flag_enter = false, flag_esc = false;
+int x_cursor, y_cursor;
 
 int main(int argc, char const *argv[]) {
     WINDOW *intro;
@@ -45,7 +49,7 @@ int main(int argc, char const *argv[]) {
         0,
     };
     char name[33];
-    int score = 20;
+    int score = 0;
 
     initscr();
     noecho(); // 입력을 자동으로 화면에 출력하지 않도록 합니다.
@@ -90,14 +94,24 @@ int main(int argc, char const *argv[]) {
         case 0:                 // 게임 시작
             input_name(name);
             clear;
+            flag_esc = false;
+            x_cursor = 8;
+            y_cursor = 5;
             draw_mainpage(window1, window2, window3);
-            next_block(window3, blocks, block);
-            draw_keep_blocks(window2, 11, block);
-
-            append_ranking(name, score);
+            while (1) {
+                flag_enter = false;
+                next_block(window3, blocks, block);
+                draw_keep_blocks(window2, 11, block);
+                Keyboard(window1);
+                if (flag_esc)
+                    break;
+            }
+            exit_game(window1, window2, window3,
+                      blocks);           // 윈도우 및 queue 초기화
+            append_ranking(name, score); // 이름과 점수를 랭킹에 업데이트
             // mvwprintw(window3, 0, 0, "0");
             // wrefresh(window3);
-            getchar();
+            // getchar();
             refresh();
             break;
         case 1: // 랭킹
@@ -405,6 +419,62 @@ void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
     }
 
     wrefresh(FOOTER);
+}
+
+void Keyboard(WINDOW *GAME) {
+    keypad(GAME, TRUE);
+    while (1) {
+        draw_map(
+            GAME); // 지금은 커서 움직임 보기 위해서 보드판을 계속 초기화했음.
+        wmove(GAME, y_cursor, x_cursor);
+        wprintw(GAME, "o");
+        int c = wgetch(GAME);
+        switch (c) {
+        case 'a':
+        case 'A':
+            if (x_cursor > 8) {
+                wprintw(GAME, " ");
+                x_cursor -= 4;
+            }
+            break;
+        case 'd':
+        case 'D':
+            if (x_cursor < 40) {
+                wprintw(GAME, " ");
+                x_cursor += 4;
+            }
+            break;
+        case 'w':
+        case 'W':
+            if (y_cursor > 5) {
+                wprintw(GAME, " ");
+                y_cursor -= 2;
+            }
+            break;
+        case 's':
+        case 'S':
+            if (y_cursor < 21) {
+                wprintw(GAME, " ");
+                y_cursor += 2;
+            }
+            break;
+        case 'k':
+        case 'K':
+            // 블록 놓기 구현해야 함.
+            // 키 입력시 다음 블럭으로 넘어가게만 해 놓았음.
+            // 보드에 블록 놓을 시 저장해서 다시 불러오게 하면 될듯합니다.
+            flag_enter = true;
+            return;
+            break;
+        case 27:
+            // esc 입력시 메뉴 화면으로 나가게 했음.
+            // 2~3번 눌러야 나가져서 고칠 예정.
+            flag_esc = true;
+            return;
+            break;
+        }
+        wrefresh(GAME);
+    }
 }
 
 void exit_game(WINDOW *GAME, WINDOW *SIDE, WINDOW *FOOTER,
