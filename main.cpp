@@ -423,6 +423,7 @@ void Keyboard(WINDOW *GAME) {
         wprintw(GAME, "o");
         int c = wgetch(GAME);
         switch (c) {
+        case KEY_LEFT:
         case 'a':
         case 'A':
             if (x_cursor > 8) {
@@ -430,6 +431,7 @@ void Keyboard(WINDOW *GAME) {
                 x_cursor -= 4;
             }
             break;
+        case KEY_RIGHT:
         case 'd':
         case 'D':
             if (x_cursor < 40) {
@@ -437,6 +439,7 @@ void Keyboard(WINDOW *GAME) {
                 x_cursor += 4;
             }
             break;
+        case KEY_UP:
         case 'w':
         case 'W':
             if (y_cursor > 5) {
@@ -444,6 +447,7 @@ void Keyboard(WINDOW *GAME) {
                 y_cursor -= 2;
             }
             break;
+        case KEY_DOWN:    
         case 's':
         case 'S':
             if (y_cursor < 21) {
