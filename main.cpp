@@ -108,12 +108,15 @@ int main(int argc, char const *argv[]) {
                 Keyboard(window1);
                 if (flag_esc)
                     break;
+
+                plus_score(score, block); // 블록을 놓으면 블록 개수만큼 추가
             }
+
+            /* 게임 종료 후 초기화 */
             exit_game(window1, window2, window3,
                       blocks);           // 윈도우 및 queue 초기화
             append_ranking(name, score); // 이름과 점수를 랭킹에 업데이트
-            // mvwprintw(window3, 0, 0, "0");
-            // wrefresh(window3);
+            score = 0;                   // score 초기화
             // getchar(); esc를 두번 누르지 않고 종료하도록 없앤다
             refresh();
             break;
