@@ -1,6 +1,7 @@
 #include "Queue.h"
 #include "block.h"
 #include "ranking/ranking.h"
+#include "score.h"
 #include <ncurses.h>
 #include <unistd.h>
 
@@ -24,6 +25,8 @@ void draw_mainpage(WINDOW *, WINDOW *, WINDOW *);
 void draw_side(WINDOW *);
 void draw_keep_blocks(WINDOW *, int, int (*)[5]);
 void next_block(WINDOW *, queue<int **> &, int (*)[5]);
+void exit_game(WINDOW *, WINDOW *, WINDOW *, queue<int **> &);
+void input_name(char *);
 
 char *choices[] = {
     "Start",
@@ -38,7 +41,11 @@ int main(int argc, char const *argv[]) {
     WINDOW *window2;
     WINDOW *window3;
     queue<int **> blocks;
-    int block[5][5] = {};
+    int block[5][5] = {
+        0,
+    };
+    char name[33];
+    int score = 20;
 
     initscr();
     noecho(); // 입력을 자동으로 화면에 출력하지 않도록 합니다.
@@ -81,10 +88,13 @@ int main(int argc, char const *argv[]) {
         intro_result = draw_intro(); // 메인화면 그리기
         switch (intro_result) { // 메인화면 선택에 따라 다른 화면 출력
         case 0:                 // 게임 시작
+            input_name(name);
             clear;
             draw_mainpage(window1, window2, window3);
             next_block(window3, blocks, block);
             draw_keep_blocks(window2, 11, block);
+
+            append_ranking(name, score);
             // mvwprintw(window3, 0, 0, "0");
             // wrefresh(window3);
             getchar();
@@ -156,12 +166,12 @@ void draw_keep_blocks(WINDOW *SIDE, int start_point_y, int (*block)[5]) {
                 x += 2;
             } else if ((i % 2 == 1 && j % 2 == 0) ||
                        (i % 2 == 0 && j % 2 == 1)) { // 해당 칸은 블록임
-                // 블록은 다른색으로 출력
+                // 블록은 각 칸을 다른색으로 출력
                 wattron(next_blocks, COLOR_PAIR(BLUE_WHITE));
                 mvwprintw(next_blocks, y, x, "  ");
                 wattron(next_blocks, COLOR_PAIR(MENUW_PAIR));
                 x += 2;
-            } else {
+            } else { // 해당 칸은 블록임
                 wattron(next_blocks, COLOR_PAIR(BLUE_GRAY));
                 mvwprintw(next_blocks, y, x, "  ");
                 wattron(next_blocks, COLOR_PAIR(MENUW_PAIR));
@@ -303,12 +313,8 @@ void draw_menu(WINDOW *menu, int highlight) {
 }
 
 /*
-    [Usage]
-    queue<int(*)[5]> blocks;
-    int(*block)[5];
-    block = (int(*)[5])next_block(window3, blocks);
-    // block[i][j] 로 접근
-
+queue에 블록이 빌때마다 5개씩 랜덤으로 추가한다
+현재 넣어야 할 블록을 매개변수 block에 반환한다.
 */
 void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
     int x;
@@ -341,10 +347,10 @@ void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
     dynamic_block = blocks.front(); // 가장 앞 블록을 꺼내서 제거
     blocks.pop();
 
+    /* queue에서 꺼낸 블록을 block에 반환, 외부에서 해당 블록 사용 가능 */
     for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 5; j++) {
-            block[i][j] =
-                dynamic_block[i][j]; // 동적으로 할당한 블록을 blcok에 반환
+            block[i][j] = dynamic_block[i][j];
         }
     }
 
@@ -381,12 +387,12 @@ void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
                     x += 2;
                 } else if ((i % 2 == 1 && j % 2 == 0) ||
                            (i % 2 == 0 && j % 2 == 1)) { // 해당 칸은 블록임
-                    // 블록은 다른색으로 출력
+                    // 블록은 각 칸을 다른색으로 출력
                     wattron(FOOTER, COLOR_PAIR(BLUE_WHITE));
                     mvwprintw(FOOTER, y, x, "  ");
                     wattron(FOOTER, COLOR_PAIR(MENUW_PAIR));
                     x += 2;
-                } else {
+                } else { // 해당 칸은 블록임
                     wattron(FOOTER, COLOR_PAIR(BLUE_GRAY));
                     mvwprintw(FOOTER, y, x, "  ");
                     wattron(FOOTER, COLOR_PAIR(MENUW_PAIR));
@@ -399,4 +405,34 @@ void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
     }
 
     wrefresh(FOOTER);
+}
+
+void exit_game(WINDOW *GAME, WINDOW *SIDE, WINDOW *FOOTER,
+               queue<int **> &blocks) {
+
+    werase(GAME);
+    werase(SIDE);
+    werase(FOOTER);
+
+    while (!blocks.empty()) {
+        blocks.pop();
+    }
+}
+
+/* 게임 시작시 사용자에게 이름을 입력 받는 함수 */
+void input_name(char *name) {
+    WINDOW *menu = newwin(11, 80, 23, 0); // 메뉴 화면 생성
+    wbkgd(menu, COLOR_PAIR(SCOREW_PAIR)); // 메뉴 화면 색 설정
+    wborder(menu, '|', '|', '-', '-', '+', '+', '+', '+');
+
+    mvwprintw(menu, 5, 15, "input name : ");
+
+    wrefresh(menu);
+    echo(); // 입력을 화면에 출력하도록 합니다.
+
+    mvwgetstr(menu, 5, 28, name); // 사용자로부터 이름을 입력 받습니다
+
+    noecho(); // 입력을 자동으로 화면에 출력하지 않도록 합니다.
+
+    werase(menu);
 }
