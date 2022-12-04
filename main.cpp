@@ -35,6 +35,7 @@ int n_choices = sizeof(choices) / sizeof(char *);
 
 bool flag_enter = false, flag_esc = false;
 int x_cursor, y_cursor;
+int game_board[9][9] = {0,};
 
 int main(int argc, char const *argv[]) {
     WINDOW *intro;
@@ -472,4 +473,45 @@ void Keyboard(WINDOW *GAME) {
         }
         wrefresh(GAME);
     }
+}
+
+// block : The block that user should place on this turn.
+// return true there is place for block, else return false 
+bool check_game_end_condition(int block[5][5]) {
+    bool result; 
+
+    int temp_wide_game_info[12][12] = {0, };
+    int y_on_widegameboard, x_on_widegameboard;
+    int y_on_game_board, x_on_game_board;
+    for (int i = 2; i< 11; i++)
+        for (int j = 2; j < 11; j++)
+            temp_wide_game_info[i][j] = game_board[i-2][j-2]; // copy game_board on 12*12 new board 
+    
+    for(int i = 2; i < 11; i++) {
+        for (int j = 2; j < 11; j++) {            
+            y_on_widegameboard = i-2;
+            x_on_widegameboard = j-2;
+            int flag= 0;
+            for (int k = 0; k < 5; k++) {
+                for (int u = 0; u < 5; u++) {
+                    y_on_game_board = y_on_widegameboard + k;
+                    x_on_game_board = x_on_game_board + u;
+
+                    // when block out of board
+                    if (block[k][u] == 1 && ((y_on_game_board < 2 && y_on_game_board > 11) || (x_on_game_board < 2 && x_on_game_board > 11))) {
+                        flag = 1;
+                        break;
+                    }
+
+                    if (block[k][u] == 1 && (temp_wide_game_info[y_on_game_board][x_on_game_board]==1)) {
+                        flag = 1;
+                        break;
+                    }
+                }
+                if (flag) break;
+            }
+            if(!flag) return true;
+        }
+    }
+    return false;
 }
