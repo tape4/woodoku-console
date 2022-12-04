@@ -100,8 +100,8 @@ void check_board(int (*game_board)[9], int &score) {
     }
 }
 
+/* 블록을 keep하면 해당 블록의 크기만큼 점수를 추가하는 함수 */
 void plus_score(int &score, int (*block)[5]) {
-    int block_cell_num = 0;
     for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 5; j++) {
             if (block[i][j] == 1) {

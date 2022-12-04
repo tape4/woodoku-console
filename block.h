@@ -394,4 +394,3 @@ template <class Item> class Block {
   private:
     Item block[5][5]; // 2차원 배열로 블럭값 저장
 };
-
