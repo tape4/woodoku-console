@@ -35,6 +35,7 @@ void print_score(WINDOW *, int &, int);
 void print_game_board(WINDOW *, int (*)[9]);
 void print_overlap_board(WINDOW *, int (*)[9], int (*)[9]);
 bool keep_block(int (*)[9], int (*)[9], int (*)[9]);
+bool check_game_end_condition(int block[5][5]);
 void set_array_zero(int (*)[9]);
 
 char *choices[] = {
@@ -47,8 +48,11 @@ int n_choices = sizeof(choices) / sizeof(char *);
 bool flag_enter = false, flag_esc = false;
 int x_cursor, y_cursor;
 
-int game_board[9][9] = {0,};
-int main(int argc, char const *argv[]) {
+int game_board[9][9] = {
+    0,
+};
+int main(int argc, char const *argv[])
+{
     WINDOW *intro;
     WINDOW *window1;
     WINDOW *window2;
@@ -67,15 +71,18 @@ int main(int argc, char const *argv[]) {
     int score = 0;
 
     initscr();
-    noecho(); // 입력을 자동으로 화면에 출력하지 않도록 합니다.
+    noecho();        // 입력을 자동으로 화면에 출력하지 않도록 합니다.
     curs_set(FALSE); // cursor를 보이지 않게 합니다.
 
     // 터미널 색 설정
-    if (has_colors() == FALSE) {
+    if (has_colors() == FALSE)
+    {
         puts("Terminal does not support colors!");
         endwin();
         return 1;
-    } else {
+    }
+    else
+    {
         start_color();
 
         init_color(COLOR_GRAY, 500, 500, 500);
@@ -105,21 +112,24 @@ int main(int argc, char const *argv[]) {
     int intro_result;
 
     // 메인화면
-    while (true) {
+    while (true)
+    {
         intro_result = draw_intro(); // 메인화면 그리기
-        switch (intro_result) { // 메인화면 선택에 따라 다른 화면 출력
-        case 0:                 // 게임 시작
+        switch (intro_result)
+        {       // 메인화면 선택에 따라 다른 화면 출력
+        case 0: // 게임 시작
             input_name(name);
             clear;
             flag_esc = false;
             x_cursor = 8;
             y_cursor = 5;
             draw_mainpage(window1, window2, window3);
-            while (1) {
+            while (1)
+            {
                 flag_enter = false;
                 // fresh_board(window1);
-                next_block(window3, blocks, block); // 큐에서 다음 블록을 받아옴
-                draw_keep_blocks(window2, 11, block); // 옆 화면에 블록 출력
+                next_block(window3, blocks, block);      // 큐에서 다음 블록을 받아옴
+                draw_keep_blocks(window2, 11, block);    // 옆 화면에 블록 출력
                 print_score(window2, best_score, score); // 옆 화면에 점수 출력
                 check_board(game_board, score);
                 Keyboard(window1, game_board, block);
@@ -154,7 +164,8 @@ int main(int argc, char const *argv[]) {
 }
 
 // 게임시작 - 화면 그리기
-void draw_mainpage(WINDOW *GAME, WINDOW *SIDE, WINDOW *FOOTER) {
+void draw_mainpage(WINDOW *GAME, WINDOW *SIDE, WINDOW *FOOTER)
+{
     draw_map(GAME);  // 게임이 진행되는 화면 그리기
     draw_side(SIDE); // 오른쪽 화면 그리기
     wborder(FOOTER, '|', '|', '-', '-', '+', '+', '+',
@@ -165,20 +176,27 @@ void draw_mainpage(WINDOW *GAME, WINDOW *SIDE, WINDOW *FOOTER) {
 }
 
 // 게임시작 - 오른쪽 그리기
-void draw_side(WINDOW *SIDE) {
+void draw_side(WINDOW *SIDE)
+{
     char *keyList[] = {
-        "  ^    :  Up",   "<- ->  :  Left/Right",
-        "  v    :  Down", "",
-        "SPACE  :  Drop", "K      :  Keep Blocks ",
-        "ESC    :  Exit", "",
-        "Best   :  ",     "Score  :  ",
+        "  ^    :  Up",
+        "<- ->  :  Left/Right",
+        "  v    :  Down",
+        "",
+        "SPACE  :  Drop",
+        "K      :  Keep Blocks ",
+        "ESC    :  Exit",
+        "",
+        "Best   :  ",
+        "Score  :  ",
         "LEVEL  :  ",
     };
     int n_keyList = sizeof(keyList) / sizeof(char *);
 
     // 화면 테두리 설정
     wborder(SIDE, '|', '|', '-', '-', '+', '+', '+', '+');
-    for (int i = 0; i < n_keyList; i++) {
+    for (int i = 0; i < n_keyList; i++)
+    {
         mvwprintw(SIDE, 2 + i, 4, "%s", keyList[i]);
     }
     wrefresh(SIDE); // 화면 그리기
@@ -186,7 +204,8 @@ void draw_side(WINDOW *SIDE) {
     // draw_keep_blocks(SIDE, n_keyList);
 }
 // 게임시작 - 오른쪽화면 내 다음 보관중인 블럭 출력 subwin (keep)
-void draw_keep_blocks(WINDOW *SIDE, int start_point_y, int (*block)[5]) {
+void draw_keep_blocks(WINDOW *SIDE, int start_point_y, int (*block)[5])
+{
     int x, y;
     WINDOW *next_blocks = subwin(SIDE, 11, 26, start_point_y + 2, 52);
     werase(next_blocks);
@@ -195,20 +214,27 @@ void draw_keep_blocks(WINDOW *SIDE, int start_point_y, int (*block)[5]) {
     wborder(next_blocks, '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(next_blocks, 0, 11, "KEEP");
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++)
+    {
         x = 8;
         y = i + 3;
-        for (int j = 0; j < 5; j++) {
-            if (block[i][j] == 0) { // 해당 칸은 블록이 아님
+        for (int j = 0; j < 5; j++)
+        {
+            if (block[i][j] == 0)
+            { // 해당 칸은 블록이 아님
                 x += 2;
-            } else if ((i % 2 == 1 && j % 2 == 0) ||
-                       (i % 2 == 0 && j % 2 == 1)) { // 해당 칸은 블록임
+            }
+            else if ((i % 2 == 1 && j % 2 == 0) ||
+                     (i % 2 == 0 && j % 2 == 1))
+            { // 해당 칸은 블록임
                 // 블록은 각 칸을 다른색으로 출력
                 wattron(next_blocks, COLOR_PAIR(BLUE_WHITE));
                 mvwprintw(next_blocks, y, x, "  ");
                 wattron(next_blocks, COLOR_PAIR(MENUW_PAIR));
                 x += 2;
-            } else { // 해당 칸은 블록임
+            }
+            else
+            { // 해당 칸은 블록임
                 wattron(next_blocks, COLOR_PAIR(BLUE_GRAY));
                 mvwprintw(next_blocks, y, x, "  ");
                 wattron(next_blocks, COLOR_PAIR(MENUW_PAIR));
@@ -220,18 +246,23 @@ void draw_keep_blocks(WINDOW *SIDE, int start_point_y, int (*block)[5]) {
     wrefresh(next_blocks);
 }
 // 게임시작 - 게임판 그리기
-void draw_map(WINDOW *GAME) {
+void draw_map(WINDOW *GAME)
+{
     static int startpoint_x = 6;
     static int startpoint_y = 4;
 
     wborder(GAME, '|', '|', '-', '-', '+', '+', '+', '+'); // 화면 테두리 설정
     mvwprintw(GAME, 2, 19, "GAME BOARD");
-    for (int i = startpoint_y; i <= startpoint_y + 18; i += 2) {
-        if ((i - startpoint_y) % 6 == 0) {
+    for (int i = startpoint_y; i <= startpoint_y + 18; i += 2)
+    {
+        if ((i - startpoint_y) % 6 == 0)
+        {
             wattron(GAME, COLOR_PAIR(GAMEW_PAIR_MAIN));
             mvwprintw(GAME, i, startpoint_x,
                       "+---+---+---+---+---+---+---+---+---+");
-        } else {
+        }
+        else
+        {
             wattron(GAME, COLOR_PAIR(GAMEW_PAIR_R));
             mvwprintw(GAME, i, startpoint_x,
                       "+---+---+---+---+---+---+---+---+---+");
@@ -242,7 +273,8 @@ void draw_map(WINDOW *GAME) {
             mvwprintw(GAME, i, startpoint_x + 36, "+");
         }
     }
-    for (int i = startpoint_y + 1; i <= startpoint_y + 18; i += 2) {
+    for (int i = startpoint_y + 1; i <= startpoint_y + 18; i += 2)
+    {
         wattron(GAME, COLOR_PAIR(GAMEW_PAIR_MAIN));
         mvwprintw(GAME, i, startpoint_x,
                   "|           |           |           |");
@@ -255,7 +287,8 @@ void draw_map(WINDOW *GAME) {
 }
 
 // 초기화면 그리기
-int draw_intro() {
+int draw_intro()
+{
     const int window_size_x = 80;
     const int startpoint_x = 14;
     const int startpoint_y = 7;
@@ -293,9 +326,11 @@ int draw_intro() {
     draw_menu(menu, cursor);
 
     // 키보드 입력받기
-    while (1) {
+    while (1)
+    {
         c = wgetch(menu);
-        switch (c) {
+        switch (c)
+        {
             // 왼쪽
         case KEY_LEFT:
             if (cursor == 0)
@@ -327,7 +362,8 @@ int draw_intro() {
     refresh();
 }
 // 초기화면 메뉴 그리기
-void draw_menu(WINDOW *menu, int highlight) {
+void draw_menu(WINDOW *menu, int highlight)
+{
     static int y = 5;
     static int x = 12;
     static int cursor = 0;
@@ -335,14 +371,18 @@ void draw_menu(WINDOW *menu, int highlight) {
     // 메뉴화면 테두리 설정
     wborder(menu, '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(menu, 2, 38, "menu");
-    for (int i = 0; i < n_choices; i++) {
+    for (int i = 0; i < n_choices; i++)
+    {
         // 현재 커서 값에 따라 메뉴 색 다르게 출력
         // 해당 색 이면 다르게 출력
-        if (highlight == i) {
+        if (highlight == i)
+        {
             wattron(menu, A_REVERSE); // 색 설정
             mvwprintw(menu, y, x + (2 * x) * i, "%s", choices[i]);
             wattroff(menu, A_REVERSE); // 색 설정 끄기
-        } else {
+        }
+        else
+        {
             // 커서가 아닌 다른 메뉴는 그대로 출력
             mvwprintw(menu, y, x + (2 * x) * i, "%s", choices[i]);
         }
@@ -354,7 +394,8 @@ void draw_menu(WINDOW *menu, int highlight) {
 queue에 블록이 빌때마다 5개씩 랜덤으로 추가한다
 현재 넣어야 할 블록을 매개변수 block에 반환한다.
 */
-void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
+void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5])
+{
     int x;
     int y;
     int count = 0;
@@ -367,7 +408,8 @@ void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
     wborder(FOOTER, '|', '|', '-', '-', '+', '+', '+', '+');
     wprintw(FOOTER, "FOOTER BOARD");
 
-    if (blocks.empty()) { // 가장 처음 호출시 큐가 비어있기 때문에 블록 추가
+    if (blocks.empty())
+    { // 가장 처음 호출시 큐가 비어있기 때문에 블록 추가
         srand(time(0));
         Block<int> block1(rand() % 46);
         Block<int> block2(rand() % 46);
@@ -386,8 +428,10 @@ void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
     blocks.pop();
 
     /* queue에서 꺼낸 블록을 block에 반환, 외부에서 해당 블록 사용 가능 */
-    for (int i = 0; i < 5; i++) {
-        for (int j = 0; j < 5; j++) {
+    for (int i = 0; i < 5; i++)
+    {
+        for (int j = 0; j < 5; j++)
+        {
             block[i][j] = dynamic_block[i][j];
         }
     }
@@ -397,8 +441,9 @@ void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
         free(dynamic_block[i]);
     free(dynamic_block);
 
-    if (blocks.empty()) { // 큐에서 마지막 블록을 pop한 경우 다시 큐에 블록
-                          // 추가
+    if (blocks.empty())
+    { // 큐에서 마지막 블록을 pop한 경우 다시 큐에 블록
+      // 추가
         Block<int> block1(rand() % 46);
         Block<int> block2(rand() % 46);
         Block<int> block3(rand() % 46);
@@ -414,23 +459,31 @@ void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
 
     queue<int **> copy(blocks);
 
-    while (!copy.empty()) {         // FOOTER 윈도우에 블록 모두 출력
+    while (!copy.empty())
+    {                               // FOOTER 윈도우에 블록 모두 출력
         int **block = copy.front(); // front에 있는 블록 저장
         copy.pop();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 5; i++)
+        {
             x = 4 * count + 7 + count * 10;
             y = i + 2;
-            for (int j = 0; j < 5; j++) {
-                if (block[i][j] == 0) { // 해당 칸은 블록이 아님
+            for (int j = 0; j < 5; j++)
+            {
+                if (block[i][j] == 0)
+                { // 해당 칸은 블록이 아님
                     x += 2;
-                } else if ((i % 2 == 1 && j % 2 == 0) ||
-                           (i % 2 == 0 && j % 2 == 1)) { // 해당 칸은 블록임
+                }
+                else if ((i % 2 == 1 && j % 2 == 0) ||
+                         (i % 2 == 0 && j % 2 == 1))
+                { // 해당 칸은 블록임
                     // 블록은 각 칸을 다른색으로 출력
                     wattron(FOOTER, COLOR_PAIR(BLUE_WHITE));
                     mvwprintw(FOOTER, y, x, "  ");
                     wattron(FOOTER, COLOR_PAIR(MENUW_PAIR));
                     x += 2;
-                } else { // 해당 칸은 블록임
+                }
+                else
+                { // 해당 칸은 블록임
                     wattron(FOOTER, COLOR_PAIR(BLUE_GRAY));
                     mvwprintw(FOOTER, y, x, "  ");
                     wattron(FOOTER, COLOR_PAIR(MENUW_PAIR));
@@ -445,7 +498,8 @@ void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
     wrefresh(FOOTER);
 }
 
-void Keyboard(WINDOW *GAME, int (*game_board)[9], int (*block)[5]) {
+void Keyboard(WINDOW *GAME, int (*game_board)[9], int (*block)[5])
+{
     keypad(GAME, TRUE);
     int size_nine_block[9][9];
     int overlap_board[9][9] = {
@@ -462,9 +516,11 @@ void Keyboard(WINDOW *GAME, int (*game_board)[9], int (*block)[5]) {
     wrefresh(GAME);
 
     /* 상하 좌우로 블록을 움직이면 overlap_board 업데이트 */
-    while (1) {
+    while (1)
+    {
         int c = wgetch(GAME);
-        switch (c) {
+        switch (c)
+        {
         case KEY_LEFT:
         case 'a':
         case 'A':
@@ -495,7 +551,8 @@ void Keyboard(WINDOW *GAME, int (*game_board)[9], int (*block)[5]) {
             break;
         case 'k':
         case 'K':
-            if (keep_block(game_board, size_nine_block, overlap_board)) {
+            if (keep_block(game_board, size_nine_block, overlap_board))
+            {
                 /* overlap_board에서 중복이 되어 있지 않은 경우 게임보드에
                    블록을 keep한다 */
                 print_overlap_board(GAME, overlap_board, size_nine_block);
@@ -516,41 +573,52 @@ void Keyboard(WINDOW *GAME, int (*game_board)[9], int (*block)[5]) {
 }
 
 // block : The block that user should place on this turn.
-// return true there is place for block, else return false 
-bool check_game_end_condition(int block[5][5]) {
-    bool result; 
+// return true there is place for block, else return false
+bool check_game_end_condition(int block[5][5])
+{
+    bool result;
 
-    int temp_wide_game_info[12][12] = {0, };
+    int temp_wide_game_info[12][12] = {
+        0,
+    };
     int y_on_widegameboard, x_on_widegameboard;
     int y_on_game_board, x_on_game_board;
-    for (int i = 2; i< 11; i++)
+    for (int i = 2; i < 11; i++)
         for (int j = 2; j < 11; j++)
-            temp_wide_game_info[i][j] = game_board[i-2][j-2]; // copy game_board on 12*12 new board 
-    
-    for(int i = 2; i < 11; i++) {
-        for (int j = 2; j < 11; j++) {            
-            y_on_widegameboard = i-2;
-            x_on_widegameboard = j-2;
-            int flag= 0;
-            for (int k = 0; k < 5; k++) {
-                for (int u = 0; u < 5; u++) {
+            temp_wide_game_info[i][j] = game_board[i - 2][j - 2]; // copy game_board on 12*12 new board
+
+    for (int i = 2; i < 11; i++)
+    {
+        for (int j = 2; j < 11; j++)
+        {
+            y_on_widegameboard = i - 2;
+            x_on_widegameboard = j - 2;
+            int flag = 0;
+            for (int k = 0; k < 5; k++)
+            {
+                for (int u = 0; u < 5; u++)
+                {
                     y_on_game_board = y_on_widegameboard + k;
                     x_on_game_board = x_on_game_board + u;
 
                     // when block out of board
-                    if (block[k][u] == 1 && ((y_on_game_board < 2 && y_on_game_board > 11) || (x_on_game_board < 2 && x_on_game_board > 11))) {
+                    if (block[k][u] == 1 && ((y_on_game_board < 2 && y_on_game_board > 11) || (x_on_game_board < 2 && x_on_game_board > 11)))
+                    {
                         flag = 1;
                         break;
                     }
 
-                    if (block[k][u] == 1 && (temp_wide_game_info[y_on_game_board][x_on_game_board]==1)) {
+                    if (block[k][u] == 1 && (temp_wide_game_info[y_on_game_board][x_on_game_board] == 1))
+                    {
                         flag = 1;
                         break;
                     }
                 }
-                if (flag) break;
+                if (flag)
+                    break;
             }
-            if(!flag) return true;
+            if (!flag)
+                return true;
         }
     }
     return false;
@@ -558,19 +626,22 @@ bool check_game_end_condition(int block[5][5]) {
 
 /* 윈도우 및 큐 초기화 */
 void exit_game(WINDOW *GAME, WINDOW *SIDE, WINDOW *FOOTER,
-               queue<int **> &blocks) {
+               queue<int **> &blocks)
+{
 
     werase(GAME);
     werase(SIDE);
     werase(FOOTER);
 
-    while (!blocks.empty()) {
+    while (!blocks.empty())
+    {
         blocks.pop();
     }
 }
 
 /* 게임 시작시 사용자에게 이름을 입력 받는 함수 */
-void input_name(char *name) {
+void input_name(char *name)
+{
     WINDOW *menu = newwin(11, 80, 23, 0); // 메뉴 화면 생성
     wbkgd(menu, COLOR_PAIR(SCOREW_PAIR)); // 메뉴 화면 색 설정
     wborder(menu, '|', '|', '-', '-', '+', '+', '+', '+');
@@ -588,7 +659,8 @@ void input_name(char *name) {
 }
 
 /* 옆 화면에 점수를 출력하는 함수 */
-void print_score(WINDOW *SIDE, int &best_score, int score) {
+void print_score(WINDOW *SIDE, int &best_score, int score)
+{
     if (score > best_score)
         best_score = score;
     mvwprintw(SIDE, 10, 14, "%d", best_score);
@@ -596,7 +668,8 @@ void print_score(WINDOW *SIDE, int &best_score, int score) {
     wrefresh(SIDE);
 }
 
-void fresh_board(WINDOW *GAME) {
+void fresh_board(WINDOW *GAME)
+{
     int in_ch, i, j;
     int x_cursor = 0;
     int y_cursor = 0;
@@ -607,18 +680,23 @@ void fresh_board(WINDOW *GAME) {
 
     // 보드에 블럭이 시작되는 위치를 잘 모르겠어서 우선 0,0으로 잡았습니다
     // 9x9화면 모두 체크
-    for (y_cursor = 0; y_cursor < 18; y_cursor += 2) { // y 방향이동
+    for (y_cursor = 0; y_cursor < 18; y_cursor += 2)
+    { // y 방향이동
         num = 0;
-        for (x_cursor = 0; x_cursor < 36; x_cursor += 4) { // x 방향 이동
+        for (x_cursor = 0; x_cursor < 36; x_cursor += 4)
+        {                                       // x 방향 이동
             in_ch = mvinch(y_cursor, x_cursor); // 현재 커서의 값 불러옴
-            if (in_ch == 0) {
+            if (in_ch == 0)
+            {
                 num++;
-                if (num = 9) { // 열에 대해 이동하면서 0가 9번 나오면 행 삭제
+                if (num = 9)
+                {                     // 열에 대해 이동하면서 0가 9번 나오면 행 삭제
                     del_y = y_cursor; // 삭제할 행
                 }
             }
         }
-        if (num = 9) {
+        if (num = 9)
+        {
             for (del_x = 0; del_x < 18; del_x += 4)
                 mvdelch(del_y, del_x); // 문자 삭제
         }
@@ -627,18 +705,24 @@ void fresh_board(WINDOW *GAME) {
 
 /* 게임보드를 화면에 출력하는 함수
    필요시 사용 */
-void print_game_board(WINDOW *GAME, int (*game_board)[9]) {
+void print_game_board(WINDOW *GAME, int (*game_board)[9])
+{
     int start_x = 7, start_y = 5;
     int x, y;
 
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
             x = start_x + 4 * j;
             y = start_y + 2 * i;
-            if (game_board[i][j] == 1) {
+            if (game_board[i][j] == 1)
+            {
                 wattron(GAME, COLOR_PAIR(MENUW_PAIR));
                 mvwprintw(GAME, y, x, "   ");
-            } else if (game_board[i][j] == 0) {
+            }
+            else if (game_board[i][j] == 0)
+            {
                 wattron(GAME, COLOR_PAIR(BLUE_WHITE));
                 mvwprintw(GAME, y, x, "   ");
             }
@@ -648,29 +732,38 @@ void print_game_board(WINDOW *GAME, int (*game_board)[9]) {
 
 /* 게임보드와 블록을 합쳐서 출력, 중복되는 경우 빨간색으로 출력 */
 void print_overlap_board(WINDOW *GAME, int (*overlap_board)[9],
-                         int (*block)[9]) {
+                         int (*block)[9])
+{
     int start_x = 7, start_y = 5;
     int x, y;
 
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
             x = start_x + 4 * j;
             y = start_y + 2 * i;
-            if (overlap_board[i][j] == 1 && block[i][j] == 0) {
+            if (overlap_board[i][j] == 1 && block[i][j] == 0)
+            {
                 // 블록을 제외한 게임보드를 화면에 파란색으로 출력
                 wattron(GAME, COLOR_PAIR(MENUW_PAIR));
                 mvwprintw(GAME, y, x, "   ");
-            } else if (overlap_board[i][j] == 0) {
+            }
+            else if (overlap_board[i][j] == 0)
+            {
                 // 비어 있는 부분을 화면에 흰색으로 출력
                 wattron(GAME, COLOR_PAIR(BLUE_WHITE));
                 mvwprintw(GAME, y, x, "   ");
             }
 
-            if (block[i][j] == 1 && overlap_board[i][j] == 1) {
+            if (block[i][j] == 1 && overlap_board[i][j] == 1)
+            {
                 // 중복되지 않은 블록을 회색으로 출력
                 wattron(GAME, COLOR_PAIR(BLUE_GRAY));
                 mvwprintw(GAME, y, x, "   ");
-            } else if (block[i][j] == 1 && overlap_board[i][j] == 2) {
+            }
+            else if (block[i][j] == 1 && overlap_board[i][j] == 2)
+            {
                 // 중복되 부분을 빨간색으로 출력
                 wattron(GAME, COLOR_PAIR(RED_WHITE));
                 mvwprintw(GAME, y, x, "   ");
@@ -682,19 +775,26 @@ void print_overlap_board(WINDOW *GAME, int (*overlap_board)[9],
 /* 블록을 게임보드에 keep 하는데, 중복되는 부분이 존재할때에는 keep하지 않고
  * false를 출력 */
 bool keep_block(int (*game_board)[9], int (*block)[9],
-                int (*overlap_board)[9]) {
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
-            if (overlap_board[i][j] == 2) {
+                int (*overlap_board)[9])
+{
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            if (overlap_board[i][j] == 2)
+            {
                 // 중복되는 부분 존재시 keep 하지않고 false 출력
                 return false;
             }
         }
     }
 
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
-            if (block[i][j] == 1) {
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
+            if (block[i][j] == 1)
+            {
                 // 중복되는 부분이 존재하지 않으면 game_board에 block을 keep
                 game_board[i][j] = 1;
             }
@@ -704,9 +804,12 @@ bool keep_block(int (*game_board)[9], int (*block)[9],
 }
 
 /* 9x9 배열을 0으로 초기화하는 함수 */
-void set_array_zero(int (*array)[9]) {
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
+void set_array_zero(int (*array)[9])
+{
+    for (int i = 0; i < 9; i++)
+    {
+        for (int j = 0; j < 9; j++)
+        {
             array[i][j] = 0;
         }
     }
