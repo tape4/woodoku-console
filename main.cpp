@@ -1,4 +1,5 @@
 #include "Queue.h"
+#include "block.h"
 #include "ranking/ranking.h"
 #include <ncurses.h>
 #include <unistd.h>
@@ -12,14 +13,18 @@
 #define SCOREW_PAIR 3
 #define MENUW_PAIR 4
 #define BLUE_WHITE 5
+#define BLUE_GRAY 6
+
+#define COLOR_GRAY 8
 
 int draw_intro();
 void draw_map(WINDOW *);
 void draw_menu(WINDOW *, int);
 void draw_mainpage(WINDOW *, WINDOW *, WINDOW *);
 void draw_side(WINDOW *);
-void draw_keep_blocks(WINDOW *, int);
-int *next_block(WINDOW *FOOTER, queue<int (*)[5]> &blocks);
+void draw_keep_blocks(WINDOW *, int, int (*)[5]);
+void next_block(WINDOW *, queue<int **> &, int (*)[5]);
+void Keyboard(WINDOW *);
 
 char *choices[] = {
     "Start",
@@ -28,11 +33,16 @@ char *choices[] = {
 };
 int n_choices = sizeof(choices) / sizeof(char *);
 
+bool flag_enter = false, flag_esc = false;
+int x_cursor, y_cursor;
+
 int main(int argc, char const *argv[]) {
     WINDOW *intro;
     WINDOW *window1;
     WINDOW *window2;
     WINDOW *window3;
+    queue<int **> blocks;
+    int block[5][5] = {};
 
     initscr();
     noecho(); // 입력을 자동으로 화면에 출력하지 않도록 합니다.
@@ -45,11 +55,15 @@ int main(int argc, char const *argv[]) {
         return 1;
     } else {
         start_color();
+
+        init_color(COLOR_GRAY, 500, 500, 500);
+
         init_pair(GAMEW_PAIR_MAIN, COLOR_BLUE, COLOR_WHITE);
         init_pair(GAMEW_PAIR_R, COLOR_RED, COLOR_WHITE);
         init_pair(SCOREW_PAIR, COLOR_BLACK, COLOR_GREEN);
         init_pair(MENUW_PAIR, COLOR_WHITE, COLOR_BLUE);
         init_pair(BLUE_WHITE, COLOR_BLUE, COLOR_WHITE);
+        init_pair(BLUE_GRAY, COLOR_BLUE, COLOR_GRAY);
     }
 
     refresh();
@@ -72,12 +86,25 @@ int main(int argc, char const *argv[]) {
         switch (intro_result) { // 메인화면 선택에 따라 다른 화면 출력
         case 0:                 // 게임 시작
             clear;
+            flag_esc = false;
+            x_cursor = 8;
+            y_cursor = 5;
             draw_mainpage(window1, window2, window3);
+            while (1) {
+                flag_enter = false;
+                next_block(window3, blocks, block);
+                draw_keep_blocks(window2, 11, block);
+                Keyboard(window1);
+                if (flag_esc)
+                    break;
+            }
+            // mvwprintw(window3, 0, 0, "0");
+            // wrefresh(window3);
             getchar();
             refresh();
             break;
         case 1: // 랭킹
-            // init_priority_queue();
+            init_priority_queue();
             getchar();
             refresh();
             break;
@@ -96,14 +123,10 @@ int main(int argc, char const *argv[]) {
 void draw_mainpage(WINDOW *GAME, WINDOW *SIDE, WINDOW *FOOTER) {
     draw_map(GAME);  // 게임이 진행되는 화면 그리기
     draw_side(SIDE); // 오른쪽 화면 그리기
-                     //    draw_next_block(FOOTER);
-
-    queue<int(*)[5]> blocks;
-    int(*block)[5];
-    block = (int(*)[5])next_block(FOOTER, blocks);
-    //    wborder(FOOTER, '|', '|', '-', '-', '+', '+', '+',
-    //            '+'); // 다음 블럭(아래쪽) 화면 테두리 설정
-    //    wprintw(FOOTER, "FOOTER BOARD");
+    wborder(FOOTER, '|', '|', '-', '-', '+', '+', '+',
+            '+'); // 다음 블럭(아래쪽) 화면 테두리 설정
+    wprintw(FOOTER, "FOOTER BOARD");
+    wprintw(SIDE, "SIDE BOARD");
     wrefresh(FOOTER); // 다음 블럭(아래쪽) 화면 그리기
 }
 
@@ -121,21 +144,45 @@ void draw_side(WINDOW *SIDE) {
 
     // 화면 테두리 설정
     wborder(SIDE, '|', '|', '-', '-', '+', '+', '+', '+');
-    wprintw(SIDE, "SIDE BOARD");
     for (int i = 0; i < n_keyList; i++) {
         mvwprintw(SIDE, 2 + i, 4, "%s", keyList[i]);
     }
     wrefresh(SIDE); // 화면 그리기
 
-    draw_keep_blocks(SIDE, n_keyList);
+    // draw_keep_blocks(SIDE, n_keyList);
 }
 // 게임시작 - 오른쪽화면 내 다음 보관중인 블럭 출력 subwin (keep)
-void draw_keep_blocks(WINDOW *SIDE, int start_point_y) {
-    WINDOW *next_blocks = subwin(SIDE, 10, 26, start_point_y + 3, 52);
+void draw_keep_blocks(WINDOW *SIDE, int start_point_y, int (*block)[5]) {
+    int x, y;
+    WINDOW *next_blocks = subwin(SIDE, 11, 26, start_point_y + 2, 52);
+    werase(next_blocks);
     wbkgd(next_blocks, COLOR_PAIR(SCOREW_PAIR));
     // touchwin(SIDE);
     wborder(next_blocks, '|', '|', '-', '-', '+', '+', '+', '+');
     mvwprintw(next_blocks, 0, 11, "KEEP");
+
+    for (int i = 0; i < 5; i++) {
+        x = 8;
+        y = i + 3;
+        for (int j = 0; j < 5; j++) {
+            if (block[i][j] == 0) { // 해당 칸은 블록이 아님
+                x += 2;
+            } else if ((i % 2 == 1 && j % 2 == 0) ||
+                       (i % 2 == 0 && j % 2 == 1)) { // 해당 칸은 블록임
+                // 블록은 다른색으로 출력
+                wattron(next_blocks, COLOR_PAIR(BLUE_WHITE));
+                mvwprintw(next_blocks, y, x, "  ");
+                wattron(next_blocks, COLOR_PAIR(MENUW_PAIR));
+                x += 2;
+            } else {
+                wattron(next_blocks, COLOR_PAIR(BLUE_GRAY));
+                mvwprintw(next_blocks, y, x, "  ");
+                wattron(next_blocks, COLOR_PAIR(MENUW_PAIR));
+                x += 2;
+            }
+        }
+    }
+
     wrefresh(next_blocks);
 }
 // 게임시작 - 게임판 그리기
@@ -182,8 +229,8 @@ int draw_intro() {
     int choice = -1;
     int c;
 
-    WINDOW *main = newwin(20, window_size_x, 0, 0);  // 로고 화면 생성
-    WINDOW *menu = newwin(11, window_size_x, 20, 0); // 메뉴 화면 생성
+    WINDOW *main = newwin(23, window_size_x, 0, 0);  // 로고 화면 생성
+    WINDOW *menu = newwin(11, window_size_x, 23, 0); // 메뉴 화면 생성
     wbkgd(main, COLOR_PAIR(GAMEW_PAIR_R));           // 로고 화면 색 설정
     wbkgd(menu, COLOR_PAIR(SCOREW_PAIR));            // 메뉴 화면 색 설정
 
@@ -233,6 +280,7 @@ int draw_intro() {
         case 10:
             werase(menu);
             choice = cursor;
+            keypad(menu, FALSE);
             return choice;
             break;
             // 그외
@@ -267,16 +315,21 @@ void draw_menu(WINDOW *menu, int highlight) {
     }
     wrefresh(menu);
 }
-/*queue<int(*)[5]> blocks;
+
+/*
+    [Usage]
+    queue<int(*)[5]> blocks;
     int(*block)[5];
     block = (int(*)[5])next_block(window3, blocks);
-    // block[i][j] 로 접근*/
+    // block[i][j] 로 접근
 
-int *next_block(WINDOW *FOOTER, queue<int (*)[5]> &blocks) {
+*/
+void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
     int x;
     int y;
     int count = 0;
-    int(*block)[5];
+    int random;
+    int **dynamic_block;
 
     wbkgd(FOOTER, COLOR_PAIR(MENUW_PAIR));
     werase(FOOTER);
@@ -285,90 +338,54 @@ int *next_block(WINDOW *FOOTER, queue<int (*)[5]> &blocks) {
     wprintw(FOOTER, "FOOTER BOARD");
 
     if (blocks.empty()) { // 가장 처음 호출시 큐가 비어있기 때문에 블록 추가
-        // 블록 객체를 랜덤으로 받는 코드로 추후 업그레이드 필요
-        int block1[5][5] = {{0, 0, 1, 0, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 0, 1, 0, 0}};
+        srand(time(0));
+        Block<int> block1(rand() % 46);
+        Block<int> block2(rand() % 46);
+        Block<int> block3(rand() % 46);
+        Block<int> block4(rand() % 46);
+        Block<int> block5(rand() % 46);
 
-        int block2[5][5] = {{0, 0, 0, 0, 0},
-                            {0, 1, 0, 0, 0},
-                            {0, 1, 0, 0, 0},
-                            {0, 1, 1, 1, 0},
-                            {0, 0, 0, 0, 0}};
-
-        int block3[5][5] = {{0, 0, 0, 0, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 1, 1, 1, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 0, 0, 0, 0}};
-
-        int block4[5][5] = {{0, 0, 0, 0, 0},
-                            {0, 0, 0, 0, 0},
-                            {1, 1, 1, 1, 1},
-                            {0, 0, 0, 0, 0},
-                            {0, 0, 0, 0, 0}};
-
-        int block5[5][5] = {{0, 0, 0, 0, 0},
-                            {0, 0, 0, 0, 0},
-                            {0, 1, 0, 0, 0},
-                            {0, 1, 1, 1, 0},
-                            {0, 0, 0, 0, 0}};
-
-        blocks.push(block1);
-        blocks.push(block2);
-        blocks.push(block3);
-        blocks.push(block4);
-        blocks.push(block5);
+        blocks.push(block1.get_dynamic_block());
+        blocks.push(block2.get_dynamic_block());
+        blocks.push(block3.get_dynamic_block());
+        blocks.push(block4.get_dynamic_block());
+        blocks.push(block5.get_dynamic_block());
     }
 
-    block = blocks.front(); // 반환할 블록
+    dynamic_block = blocks.front(); // 가장 앞 블록을 꺼내서 제거
     blocks.pop();
 
-    if (blocks.empty()) { // 큐에서 마지막 블록을 pop한 경우 다시 큐에 블록 추가
-        // 블록 객체를 랜덤으로 받는 코드로 추후 업그레이드 필요
-        int block1[5][5] = {{0, 0, 1, 0, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 0, 1, 0, 0}};
-
-        int block2[5][5] = {{0, 0, 0, 0, 0},
-                            {0, 1, 0, 0, 0},
-                            {0, 1, 0, 0, 0},
-                            {0, 1, 1, 1, 0},
-                            {0, 0, 0, 0, 0}};
-
-        int block3[5][5] = {{0, 0, 0, 0, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 1, 1, 1, 0},
-                            {0, 0, 1, 0, 0},
-                            {0, 0, 0, 0, 0}};
-
-        int block4[5][5] = {{0, 0, 0, 0, 0},
-                            {0, 0, 0, 0, 0},
-                            {1, 1, 1, 1, 1},
-                            {0, 0, 0, 0, 0},
-                            {0, 0, 0, 0, 0}};
-
-        int block5[5][5] = {{0, 0, 0, 0, 0},
-                            {0, 0, 0, 0, 0},
-                            {0, 1, 0, 0, 0},
-                            {0, 1, 1, 1, 0},
-                            {0, 0, 0, 0, 0}};
-
-        blocks.push(block1);
-        blocks.push(block2);
-        blocks.push(block3);
-        blocks.push(block4);
-        blocks.push(block5);
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            block[i][j] =
+                dynamic_block[i][j]; // 동적으로 할당한 블록을 blcok에 반환
+        }
     }
 
-    queue<int(*)[5]> copy(blocks);
+    /* 동적으로 할당한 block을 deallocate */
+    for (int i = 0; i < 5; i++)
+        free(dynamic_block[i]);
+    free(dynamic_block);
 
-    while (!copy.empty()) { // FOOTER 윈도우에 블록 모두 출력
-        int(*block)[5] = copy.front(); // front에 있는 블록 저장
+    if (blocks.empty()) { // 큐에서 마지막 블록을 pop한 경우 다시 큐에 블록
+                          // 추가
+        Block<int> block1(rand() % 46);
+        Block<int> block2(rand() % 46);
+        Block<int> block3(rand() % 46);
+        Block<int> block4(rand() % 46);
+        Block<int> block5(rand() % 46);
+
+        blocks.push(block1.get_dynamic_block());
+        blocks.push(block2.get_dynamic_block());
+        blocks.push(block3.get_dynamic_block());
+        blocks.push(block4.get_dynamic_block());
+        blocks.push(block5.get_dynamic_block());
+    }
+
+    queue<int **> copy(blocks);
+
+    while (!copy.empty()) {         // FOOTER 윈도우에 블록 모두 출력
+        int **block = copy.front(); // front에 있는 블록 저장
         copy.pop();
         for (int i = 0; i < 5; i++) {
             x = 4 * count + 7 + count * 10;
@@ -376,9 +393,15 @@ int *next_block(WINDOW *FOOTER, queue<int (*)[5]> &blocks) {
             for (int j = 0; j < 5; j++) {
                 if (block[i][j] == 0) { // 해당 칸은 블록이 아님
                     x += 2;
-                } else { // 해당 칸은 블록임
+                } else if ((i % 2 == 1 && j % 2 == 0) ||
+                           (i % 2 == 0 && j % 2 == 1)) { // 해당 칸은 블록임
                     // 블록은 다른색으로 출력
-                    wattron(FOOTER, COLOR_PAIR(GAMEW_PAIR_MAIN));
+                    wattron(FOOTER, COLOR_PAIR(BLUE_WHITE));
+                    mvwprintw(FOOTER, y, x, "  ");
+                    wattron(FOOTER, COLOR_PAIR(MENUW_PAIR));
+                    x += 2;
+                } else {
+                    wattron(FOOTER, COLOR_PAIR(BLUE_GRAY));
                     mvwprintw(FOOTER, y, x, "  ");
                     wattron(FOOTER, COLOR_PAIR(MENUW_PAIR));
                     x += 2;
@@ -390,6 +413,59 @@ int *next_block(WINDOW *FOOTER, queue<int (*)[5]> &blocks) {
     }
 
     wrefresh(FOOTER);
-
-    return (int *)block;
+}
+void Keyboard(WINDOW *GAME) {
+    keypad(GAME, TRUE);
+    while (1) {
+        draw_map(
+            GAME); // 지금은 커서 움직임 보기 위해서 보드판을 계속 초기화했음.
+        wmove(GAME, y_cursor, x_cursor);
+        wprintw(GAME, "o");
+        int c = wgetch(GAME);
+        switch (c) {
+        case 'a':
+        case 'A':
+            if (x_cursor > 8) {
+                wprintw(GAME, " ");
+                x_cursor -= 4;
+            }
+            break;
+        case 'd':
+        case 'D':
+            if (x_cursor < 40) {
+                wprintw(GAME, " ");
+                x_cursor += 4;
+            }
+            break;
+        case 'w':
+        case 'W':
+            if (y_cursor > 5) {
+                wprintw(GAME, " ");
+                y_cursor -= 2;
+            }
+            break;
+        case 's':
+        case 'S':
+            if (y_cursor < 21) {
+                wprintw(GAME, " ");
+                y_cursor += 2;
+            }
+            break;
+        case 'k':
+        case 'K':
+            // 블록 놓기 구현해야 함.
+            // 키 입력시 다음 블럭으로 넘어가게만 해 놓았음.
+            // 보드에 블록 놓을 시 저장해서 다시 불러오게 하면 될듯합니다.
+            flag_enter = true;
+            return;
+            break;
+        case 27:
+            // esc 입력시 메뉴 화면으로 나가게 했음.
+            // 2~3번 눌러야 나가져서 고칠 예정.
+            flag_esc = true;
+            return;
+            break;
+        }
+        wrefresh(GAME);
+    }
 }
