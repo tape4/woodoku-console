@@ -1,3 +1,4 @@
+#pragma once
 #include <cstring> // for memset, strcat
 #include <fcntl.h>
 #include <iostream>
@@ -9,3 +10,5 @@
 
 void get_ranking();
 void init_priority_queue();
+void append_ranking(char *, int);
+int get_best_score();
