@@ -28,6 +28,7 @@ void next_block(WINDOW *, queue<int **> &, int (*)[5]);
 void Keyboard(WINDOW *);
 void exit_game(WINDOW *, WINDOW *, WINDOW *, queue<int **> &);
 void input_name(char *);
+void print_score(WINDOW *, int &, int);
 
 char *choices[] = {
     "Start",
@@ -49,6 +50,7 @@ int main(int argc, char const *argv[]) {
         0,
     };
     char name[33];
+    int best_score = get_best_score();
     int score = 0;
 
     initscr();
@@ -100,8 +102,9 @@ int main(int argc, char const *argv[]) {
             draw_mainpage(window1, window2, window3);
             while (1) {
                 flag_enter = false;
-                next_block(window3, blocks, block);
-                draw_keep_blocks(window2, 11, block);
+                next_block(window3, blocks, block); // 큐에서 다음 블록을 받아옴
+                draw_keep_blocks(window2, 11, block); // 옆 화면에 블록 출력
+                print_score(window2, best_score, score); // 옆 화면에 점수 출력
                 Keyboard(window1);
                 if (flag_esc)
                     break;
@@ -111,7 +114,7 @@ int main(int argc, char const *argv[]) {
             append_ranking(name, score); // 이름과 점수를 랭킹에 업데이트
             // mvwprintw(window3, 0, 0, "0");
             // wrefresh(window3);
-            // getchar();
+            getchar();
             refresh();
             break;
         case 1: // 랭킹
@@ -505,4 +508,13 @@ void input_name(char *name) {
     noecho(); // 입력을 자동으로 화면에 출력하지 않도록 합니다.
 
     werase(menu);
+}
+
+/* 옆 화면에 점수를 출력하는 함수 */
+void print_score(WINDOW *SIDE, int &best_score, int score) {
+    if (score > best_score)
+        best_score = score;
+    mvwprintw(SIDE, 10, 14, "%d", best_score);
+    mvwprintw(SIDE, 11, 14, "%d", score);
+    wrefresh(SIDE);
 }
