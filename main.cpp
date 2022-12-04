@@ -114,7 +114,7 @@ int main(int argc, char const *argv[]) {
             append_ranking(name, score); // 이름과 점수를 랭킹에 업데이트
             // mvwprintw(window3, 0, 0, "0");
             // wrefresh(window3);
-            getchar();
+            // getchar(); esc를 두번 누르지 않고 종료하도록 없앤다
             refresh();
             break;
         case 1: // 랭킹
