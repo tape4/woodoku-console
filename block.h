@@ -394,10 +394,3 @@ template <class Item> class Block {
   private:
     Item block[5][5]; // 2차원 배열로 블럭값 저장
 };
-
-void get_block_min_max_i_j(int (*)[9], int &, int &, int &, int &);
-void block_size_to_nine(int (*)[5], int (*)[9]);
-void move_left(int (*)[9]);
-void move_right(int (*)[9]);
-void move_up(int (*)[9]);
-void move_down(int (*)[9]);
