@@ -140,7 +140,7 @@ void draw_mainpage(WINDOW *GAME, WINDOW *SIDE, WINDOW *FOOTER) {
     wborder(FOOTER, '|', '|', '-', '-', '+', '+', '+',
             '+'); // 다음 블럭(아래쪽) 화면 테두리 설정
     wprintw(FOOTER, "FOOTER BOARD");
-    wprintw(SIDE, "SIDE BOARD");
+    mvwprintw(SIDE, 0, 0, "SIDE BOARD");
     wrefresh(FOOTER); // 다음 블럭(아래쪽) 화면 그리기
 }
 
