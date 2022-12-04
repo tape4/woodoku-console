@@ -435,11 +435,6 @@ void next_block(WINDOW *FOOTER, queue<int **> &blocks, int (*block)[5]) {
                     mvwprintw(FOOTER, y, x, "  ");
                     wattron(FOOTER, COLOR_PAIR(MENUW_PAIR));
                     x += 2;
-                } else {
-                    wattron(FOOTER, COLOR_PAIR(BLUE_GRAY));
-                    mvwprintw(FOOTER, y, x, "  ");
-                    wattron(FOOTER, COLOR_PAIR(MENUW_PAIR));
-                    x += 2;
                 }
             }
         }
@@ -470,24 +465,28 @@ void Keyboard(WINDOW *GAME, int (*game_board)[9], int (*block)[5]) {
     while (1) {
         int c = wgetch(GAME);
         switch (c) {
+        case KEY_LEFT:
         case 'a':
         case 'A':
             if (move_left(size_nine_block))
                 overlap_board_and_block(game_board, size_nine_block,
                                         overlap_board);
             break;
+        case KEY_RIGHT:
         case 'd':
         case 'D':
             if (move_right(size_nine_block))
                 overlap_board_and_block(game_board, size_nine_block,
                                         overlap_board);
             break;
+        case KEY_UP:
         case 'w':
         case 'W':
             if (move_up(size_nine_block))
                 overlap_board_and_block(game_board, size_nine_block,
                                         overlap_board);
             break;
+        case KEY_DOWN:
         case 's':
         case 'S':
             if (move_down(size_nine_block))
@@ -514,6 +513,8 @@ void Keyboard(WINDOW *GAME, int (*game_board)[9], int (*block)[5]) {
         print_overlap_board(GAME, overlap_board, size_nine_block);
         wrefresh(GAME);
     }
+}
+
 // block : The block that user should place on this turn.
 // return true there is place for block, else return false 
 bool check_game_end_condition(int block[5][5]) {
